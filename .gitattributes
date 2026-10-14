@@ -1,0 +1,7 @@
+# Shell scripts and workflows run on Linux: always LF, even when committed from Windows
+* text=auto
+*.sh text eol=lf
+*.yml text eol=lf
+*.php text eol=lf
+*.pdf binary
+*.png binary

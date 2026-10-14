@@ -1,0 +1,21 @@
+# secrets: production keeps its own .env on the server (shared/.env)
+/.env
+/.env.*
+!/.env.example
+
+# user uploads, logs and runtime files: they live on the server, never in git
+/storage/uploads/**
+!/storage/uploads/.gitkeep
+/storage/logs/*
+!/storage/logs/.gitkeep
+/storage/mail.log
+/storage/.cleanup-*
+/RELEASE
+
+# local tooling
+/.vscode/
+/NIR
+/vendor/
+*.log
+.DS_Store
+Thumbs.db

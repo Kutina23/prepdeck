@@ -1,0 +1,19 @@
+# PrepDeck project folder. Only /public is meant for the web; everything else (.env, app code, SQL dumps,
+# uploads, logs) must never be served. Best practice: point the virtual host's DocumentRoot at /public instead.
+Options -Indexes
+
+# Hidden files (.env, .git, .htaccess) and backup/config/data files: never served, even without mod_rewrite
+<FilesMatch "(^\.|\.(env|sql|md|log|ini|lock|bak|sh|example)$|^NIR$|^composer\.(json|lock)$)">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # /prepdeck/  ->  /prepdeck/public/
+    RewriteRule ^$ public/ [R=302,L]
+    # anything outside public/ does not exist as far as the web is concerned
+    RewriteRule ^(?!public(?:/|$)) - [R=404,L]
+</IfModule>
+<IfModule !mod_rewrite.c>
+    RedirectMatch 302 ^/prepdeck/?$ /prepdeck/public/
+</IfModule>

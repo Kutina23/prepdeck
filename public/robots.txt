@@ -1,0 +1,10 @@
+# Assumes the /public folder is the site root in production (see README > Deploying).
+User-agent: *
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /staff/
+Disallow: /api/
+Disallow: /pay/
+Disallow: /reset.php
+Disallow: /reset
+Sitemap: /sitemap.php
