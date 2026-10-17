@@ -46,6 +46,7 @@ if ($running) echo '<div data-live-job="' . (int)$running . '"></div>';
   <p class="note" style="margin-top:10px"><?= $q ? number_format($used) . ' of ' . number_format($q) . ' AI lesson notes used this month' : number_format($used) . ' AI lesson notes this month · no limit' ?></p>
   <?php if ($q): ?><div class="meter<?= $left === 0 ? ' full' : '' ?>" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $pct ?>" aria-label="Monthly allowance used"><i style="width:<?= $pct ?>%"></i></div><?php endif; endif; ?>
 </section>
+<?= community_card($u) ?>
 <section class="card"><h2>Teaching tools</h2>
   <div class="ltiles">
     <?php foreach ([

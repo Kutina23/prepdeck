@@ -380,9 +380,63 @@ include __DIR__ . '/../includes/header.php';
 })();
 </script>
 
-<div class="wave" style="--from:var(--bg);--to:var(--surface)">
-  <svg viewBox="0 0 1440 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0,52 C240,4 520,94 760,48 C1000,2 1240,86 1440,44 L1440,100 L0,100Z"><animate attributeName="d" dur="9s" repeatCount="indefinite" values="M0,52 C240,4 520,94 760,48 C1000,2 1240,86 1440,44 L1440,100 L0,100Z;M0,40 C240,92 520,6 760,54 C1000,100 1240,8 1440,54 L1440,100 L0,100Z;M0,52 C240,4 520,94 760,48 C1000,2 1240,86 1440,44 L1440,100 L0,100Z"/></path></svg>
+<div class="wave" style="--from:var(--bg);--to:var(--deep)">
+  <svg viewBox="0 0 1440 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0,60 C300,10 560,96 840,52 C1080,14 1260,80 1440,40 L1440,100 L0,100Z"/></svg>
 </div>
+<section id="community" class="deep cmsec">
+  <div class="wrap cmgrid">
+    <div class="reveal">
+      <span class="eyebrow">PrepDeck Community</span>
+      <h2>Study with students from every school.</h2>
+      <p class="lede">Find people taking the same course at another university, add them as friends and revise together in chat. Ask for help with a tough question, share how you cracked it, plan a study night.</p>
+      <ul class="cmwhat">
+        <li><b>Friends first.</b> Nobody can message you until you accept their request.</li>
+        <li><b>Your password, your space.</b> You join and reopen it with your PrepDeck password.</li>
+        <li><b>Private by default.</b> People see your name, school and level, never your email.</li>
+        <li><b>Safe.</b> Block or report anyone in one tap; the PrepDeck team reviews every report.</li>
+      </ul>
+      <a class="btn pop" href="<?= e(url($me ? 'dashboard/community.php' : 'register.php')) ?>"><?= $me ? 'Open the community' : 'Join free' ?></a>
+      <p class="note-sm">Free for every member. Works on your phone and your laptop.</p>
+    </div>
+    <div class="cmdemo reveal zoom" role="img" aria-label="Example of the PrepDeck Community: a student chats with a friend from another school about circular queues, and a new friend request arrives">
+      <div class="cmd-side" aria-hidden="true">
+        <div class="cmd-tabs"><span class="on">Chats</span><span>Requests <i id="cmdReqN">1</i></span><span>Find</span></div>
+        <div class="cmd-row on"><span class="cmd-av" style="--h:151">KB</span><span><b>Kofi Boateng</b><small>UG · 300 level</small></span></div>
+        <div class="cmd-row"><span class="cmd-av" style="--h:24">AO</span><span><b>Abena Owusu</b><small>KNUST · 200 level</small></span><i class="cmd-dot"></i></div>
+        <div class="cmd-row"><span class="cmd-av" style="--h:280">YD</span><span><b>Yaw Darko</b><small>UCC · Lecturer</small></span></div>
+        <div class="cmd-row"><span class="cmd-av" style="--h:200">EA</span><span><b>Efua Asante</b><small>UEW · 400 level</small></span></div>
+      </div>
+      <div class="cmd-chat" aria-hidden="true">
+        <div class="cmd-head"><span class="cmd-av" style="--h:151">KB<i></i></span><div><b>Kofi Boateng</b><small>Online · University of Ghana</small></div></div>
+        <div class="cmd-msgs" id="cmdMsgs"></div>
+        <div class="cmd-compose"><span id="cmdDraft">Write a message</span><b>&#10148;</b></div>
+        <div class="cmd-toast" id="cmdToast"><span class="cmd-av" style="--h:330">ES</span><span><b>Esi Sarpong</b> from UCC wants to be friends</span><em>Accept</em></div>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="wave" style="--from:var(--deep);--to:var(--surface)">
+  <svg viewBox="0 0 1440 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0,44 C260,92 540,8 800,50 C1040,90 1260,12 1440,56 L1440,100 L0,100Z"/></svg>
+</div>
+<script>
+(function () {
+  // a short, looping example chat: messages arrive one by one, with a typing indicator before each reply
+  var M = [[0, 'Kofi, did you finish the circular queue question from the 2024 paper?'], [1, 'Yes! The trick is rear = (rear + 1) % size'], [0, 'Ohh, so it wraps back to the start of the array?'],
+    [1, 'Exactly. Draw it as a ring and it clicks 🔁'], [0, 'That makes sense now. Thank you!!'], [1, 'Stacks tomorrow, same time? I will share my flashcards']];
+  var box = document.getElementById('cmdMsgs'), toast = document.getElementById('cmdToast'), draft = document.getElementById('cmdDraft'); if (!box) return;
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches, i = 0, t = null;
+  function add(cls, text) { var d = document.createElement('div'); d.className = 'cmd-msg ' + cls; d.textContent = text; box.appendChild(d); while (box.children.length > 5) box.removeChild(box.firstChild); return d; }
+  function step() {
+    if (i >= M.length) { toast.classList.add('on'); t = setTimeout(function () { toast.classList.remove('on'); box.innerHTML = ''; i = 0; step(); }, reduce ? 6000 : 4200); return; }
+    var m = M[i++];
+    if (m[0] === 1 && !reduce) { var typing = add('them typing', ''); typing.innerHTML = '<i></i><i></i><i></i>'; t = setTimeout(function () { typing.remove(); add('them', m[1]); t = setTimeout(step, 1500); }, 1300); return; }
+    if (m[0] === 0 && !reduce) { draft.textContent = m[1]; draft.className = 'typed'; t = setTimeout(function () { draft.textContent = 'Write a message'; draft.className = ''; add('mine', m[1]); t = setTimeout(step, 900); }, 1100); return; }
+    add(m[0] ? 'them' : 'mine', m[1]); t = setTimeout(step, 2600);
+  }
+  if ('IntersectionObserver' in window) { var o = new IntersectionObserver(function (en) { if (en[0].isIntersecting) { o.disconnect(); step(); } }); o.observe(box); } else step();
+})();
+</script>
+
 
 <section id="pricing" class="price-wrap" style="border-block:0">
   <div class="wrap">

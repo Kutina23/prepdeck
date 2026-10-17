@@ -12,6 +12,12 @@ if ($id) {
     echo page_head($d['title'], ($d['code'] ? $d['code'] . ' · ' : '') . (int)$d['card_count'] . ' cards' . ($d['ai_generated'] ? ' · made by PrepDeck AI' : ''), '<a class="btn sm line" href="' . e(url('dashboard/decks.php')) . '">All decks</a>');
     if ($locked) echo lock_note('Solved answers on these cards', 'answers');
     ?>
+    <nav class="modes" aria-label="Study this set">
+      <a class="mode" href="<?= e(url('dashboard/learn.php?deck=' . $id)) ?>"<?= $locked ? plus_lock('answers') : '' ?>><span class="ic" style="background:var(--brand);color:var(--brand-ink)"><?= ic('flame') ?></span><span><b>Learn</b><small>Choose, then write</small></span></a>
+      <a class="mode" href="<?= e(url('dashboard/test.php?deck=' . $id)) ?>"<?= $locked ? plus_lock('answers') : '' ?>><span class="ic" style="background:var(--lemon)"><?= ic('docchk') ?></span><span><b>Test</b><small>Auto-made, marked</small></span></a>
+      <a class="mode" href="<?= e(url('dashboard/review.php?deck=' . $id)) ?>"<?= $plus ? '' : plus_lock('review') ?>><span class="ic" style="background:var(--pop)"><?= ic('refresh') ?></span><span><b>Smart review</b><small><?= $plus ? 'Spaced repetition' : 'Plus' ?></small></span></a>
+      <a class="mode" href="<?= e(url('dashboard/games.php?game=match&deck=' . $id)) ?>"><span class="ic" style="background:var(--surface);color:var(--ink)"><?= ic('game') ?></span><span><b>Match</b><small>Beat the clock</small></span></a>
+    </nav>
     <section class="studyhub" id="study" data-deck="<?= $id ?>" data-plus="<?= $plus ? 1 : 0 ?>">
       <div class="studytop"><output class="studyct" id="sct" aria-live="polite">0 / 0</output><div class="progressbar neon" aria-hidden="true"><i id="sbar" style="width:0"></i></div>
         <button class="fcicon" type="button" id="sshuf" aria-label="Shuffle the cards" title="Shuffle"><?= ic('refresh') ?></button></div>

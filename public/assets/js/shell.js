@@ -214,6 +214,20 @@
   /* ---- focus timer: free 15 / 5, Plus adjustable (server clamps what it records).
      State lives in localStorage (absolute end time), so the timer keeps running
      across page navigation and finishes even on another dashboard page ---- */
+  /* ---- signing out wipes the community encryption keys unlocked in this browser (community/e2ee.js) ---- */
+  document.addEventListener('click', function (e) { var a = e.target.closest('a[href*="logout"]'); if (a && window.indexedDB) try { indexedDB.deleteDatabase('pd-e2ee'); } catch (x) {} });
+
+  /* ---- lecturer teaching-tools rail: open (labels) or closed (icons), remembered on this device ---- */
+  var ltt = $('#ltt');
+  if (ltt && app) {
+    var setLt = function (s, save) {
+      app.dataset.ltools = s; var l = s === 'open' ? 'Collapse teaching tools' : 'Expand teaching tools';
+      ltt.setAttribute('aria-expanded', s === 'open' ? 'true' : 'false'); ltt.setAttribute('aria-label', l); ltt.title = l; if (save) sset('pd-ltools', s);
+    };
+    var lsv = sget('pd-ltools'); setLt(lsv === 'open' || lsv === 'closed' ? lsv : (matchMedia('(min-width:1400px)').matches ? 'open' : 'closed'));
+    ltt.addEventListener('click', function () { setLt(app.dataset.ltools === 'open' ? 'closed' : 'open', true); });
+  }
+
   var tb = $('#timerbox');
   if (tb) {
     var plus = tb.dataset.plus === '1', max = +tb.dataset.max, C = 276.46, mode = 'focus';

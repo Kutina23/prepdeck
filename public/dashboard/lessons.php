@@ -9,7 +9,7 @@ if ($id) {
     $n = row('SELECT n.*,c.code,c.title course,u.full_name author FROM lesson_notes n JOIN courses c ON c.id=n.course_id JOIN users u ON u.id=n.user_id WHERE n.id=?', [$id]);
     $ok = $n && (int)$n['school_id'] === sid() && ((int)$n['user_id'] === $uid || $n['status'] === 'published' || Auth::can('admin'));
     if (!$ok) { echo page_head('Not found') . empty_state('That lesson note is not available.', '<a class="btn sm" href="' . e(url('dashboard/lessons.php')) . '">All lesson notes</a>'); include ROOT . '/includes/dashboard_footer.php'; exit; }
-    if ((int)$n['user_id'] !== $uid && $n['status'] === 'published') q('UPDATE lesson_notes SET views=views+1 WHERE id=?', [$id]);
+    if ((int)$n['user_id'] !== $uid && $n['status'] === 'published') { q('UPDATE lesson_notes SET views=views+1 WHERE id=?', [$id]); q('INSERT IGNORE INTO lesson_reads(user_id,lesson_id) VALUES (?,?)', [$uid, $id]); }
     echo page_head($n['title'], $n['code'] . ' · ' . $n['course'] . ($n['week'] ? ' · ' . $n['week'] : '') . ' · by ' . $n['author'], '<a class="btn sm line" href="' . e(url('dashboard/lessons.php?course=' . $n['course_id'])) . '">All ' . e($n['code']) . ' notes</a>');
     echo '<article class="card guide">' . guide_html($n['body']) . '</article>';
     include ROOT . '/includes/dashboard_footer.php'; exit;

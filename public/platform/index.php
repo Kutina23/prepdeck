@@ -106,6 +106,7 @@ echo range_tabs($ranges, $days, 'days', ['sort' => $sort]);
   <?= stat_tile($pct($plusN, $students), 'Students on Plus', '', number_format($plusN) . ' of ' . number_format($students) . ' students') ?>
   <?= stat_tile(number_format($tok0 / 1000, 1) . 'k', 'AI tokens used', delta_badge($tok0, $tok1, false), 'Documents and chat') ?>
 </section>
+<?= community_card($u) ?>
 <section class="card"><h2>Needs attention</h2>
   <div class="attn" style="margin-top:12px">
     <?php foreach ([

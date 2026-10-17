@@ -25,6 +25,12 @@ final class SecurityLog {
         'password_reset' => 'Password reset from email link',
         'password_reset_admin' => 'Password reset by an admin',
         'logout' => 'Signed out',
+        'community_join' => 'Joined the community',
+        'community_unlock' => 'Unlocked the community',
+        'community_unlock_failed' => 'Wrong password for the community',
+        'community_blocked' => 'Community locked (too many password tries)',
+        'community_banned' => 'Removed from the community',
+        'community_keys' => 'New encryption keys for community files',
     ];
     public const SEVERITY = ['info', 'warning', 'critical'];
 

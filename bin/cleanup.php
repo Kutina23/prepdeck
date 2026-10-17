@@ -20,3 +20,8 @@ echo 'Deleted ' . Throttle::prune(2) . " old rate-limit entries.\n";
 
 // security log: one year is kept
 echo 'Deleted ' . SecurityLog::prune(365) . " old security log entries.\n";
+
+// community files deleted by both people (or whose message is gone): remove the encrypted bytes too
+$n = 0;
+foreach (rows("SELECT f.id,f.storage_name FROM community_files f LEFT JOIN messages m ON m.file_id=f.id WHERE f.created_at<NOW()-INTERVAL 1 HOUR AND (m.id IS NULL OR (m.hidden_for_sender=1 AND m.hidden_for_recipient=1))") as $f) { @unlink(Community::filePath($f['storage_name'])); q('DELETE FROM community_files WHERE id=?', [$f['id']]); $n++; }
+echo "Deleted $n community files nobody can see any more.\n";

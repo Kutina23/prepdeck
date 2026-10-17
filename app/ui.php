@@ -168,6 +168,26 @@ function lock_note(string $what = 'This', string $feature = 'plus', bool $auto =
     return '<div class="lockbox"' . ($auto ? ' data-plus-auto="' . e($feature) . '"' : '') . '>' . ic('lock', 'i') . '<div><b>' . e($what) . ' is part of PrepDeck Plus</b><p class="note">Upgrade to unlock it.</p></div><a class="btn sm" href="' . e(url('dashboard/plan.php')) . '"' . plus_lock($feature) . '>See Plus</a></div>';
 }
 
+/* ---------- Community card on every home dashboard (student, lecturer, rep, admin, platform owner) ---------- */
+function community_card(array $u): string {
+    $uid = (int)$u['id']; $href = e(url('dashboard/community.php'));
+    $reason = Community::blockedReason($u); $prof = $reason ? null : Community::profile($uid);
+    $stats = row('SELECT COUNT(*) m, COUNT(DISTINCT us.school_id) s FROM community_profiles p JOIN users us ON us.id=p.user_id WHERE p.banned_at IS NULL') ?: ['m' => 0, 's' => 0];
+    $crowd = (int)$stats['m'] ? number_format((int)$stats['m']) . ' member' . ((int)$stats['m'] === 1 ? '' : 's') . ' from ' . (int)$stats['s'] . ' school' . ((int)$stats['s'] === 1 ? '' : 's') : 'Be one of the first to join';
+    if ($reason) { $title = 'PrepDeck Community'; $text = $reason; $cta = ''; $meta = ''; }
+    elseif (!$prof) {
+        $title = 'Join the PrepDeck Community'; $text = 'Connect with students and lecturers from every school. Add friends, chat and study together. You join with your PrepDeck password.';
+        $cta = '<a class="btn pwgo" href="' . $href . '">' . ic('users2') . 'Join the community</a>'; $meta = $crowd;
+    } else {
+        $msgs = (int)val('SELECT COUNT(*) FROM messages WHERE recipient_id=? AND read_at IS NULL AND hidden_for_recipient=0 AND ' . Community::notBlocked('sender_id', $uid), [$uid]);
+        $reqs = (int)val("SELECT COUNT(*) FROM friendships WHERE addressee_id=? AND status='pending' AND " . Community::notBlocked('requester_id', $uid), [$uid]);
+        $title = 'Your community'; $text = $msgs || $reqs ? trim(($msgs ? $msgs . ' unread message' . ($msgs === 1 ? '' : 's') : '') . ($msgs && $reqs ? ' and ' : '') . ($reqs ? $reqs . ' friend request' . ($reqs === 1 ? '' : 's') : '')) . ' waiting for you.' : 'You are all caught up. Find people from other schools to study with.';
+        $cta = '<a class="btn pwgo" href="' . $href . '">' . ic('send') . ($msgs || $reqs ? 'Open chats' : 'Open community') . '</a>'; $meta = $crowd;
+    }
+    return '<section class="cmcard" aria-label="PrepDeck Community"><span class="pwicon" aria-hidden="true">' . ic('users2') . '</span><div class="cmc-body"><span class="pwchip">' . ic('globe', 'i') . 'Community</span><h2>' . e($title) . '</h2><p>' . e($text) . '</p>'
+        . ($meta !== '' ? '<small>' . e($meta) . '</small>' : '') . '</div>' . ($cta !== '' ? '<div class="cmc-act">' . $cta . '</div>' : '') . '</section>';
+}
+
 /* ---------- Plus pop-up: locked tools open it instead of a page ---------- */
 /** What each locked tool is, for the Plus pop-up: key => [title, why it helps, icon]. 'plus' is the general one. */
 function plus_features(): array {
@@ -183,6 +203,7 @@ function plus_features(): array {
         'decks' => ['Unlock your own decks', 'Build your own flashcard decks and let PrepDeck remember which cards you already know.', 'cards'],
         'notes' => ['Unlock unlimited notes', 'Write as many notes as you need and tag each one to a course.', 'note'],
         'uploads' => ['Unlock more uploads', 'Upload notes of any length, as often as you like, and turn them into guides, cards and games.', 'upload'],
+        'review' => ['Unlock smart review', 'Spaced repetition shows each flashcard just before you would forget it, so a few minutes a day locks it into memory for the exam.', 'flame'],
         'timer' => ['Unlock the full focus timer', 'Set your own focus length, up to ' . (int)setting('plus_max_timer', 180) . ' minutes a session.', 'timer'],
     ];
 }
@@ -208,9 +229,12 @@ function student_nav(): array {
     return [
         ['Study', [
             ['home', 'Dashboard', 'home', 'dashboard/index.php', false],
+            ['study', 'Study hub', 'flame', 'dashboard/study.php', false],
             ['ai', 'PrepDeck AI', 'spark', 'dashboard/ai.php', true],
             ['papers', 'Past questions', 'file', 'dashboard/papers.php', false],
             ['decks', 'My decks', 'cards', 'dashboard/decks.php', false],
+            ['learn', 'Learn', 'flame', 'dashboard/learn.php', false],
+            ['test', 'Test', 'docchk', 'dashboard/test.php', false],
             ['practice', 'Practice exams', 'docchk', 'dashboard/practice.php', true],
             ['notes', 'My notes', 'note', 'dashboard/notes.php', false],
             ['materials', 'My materials', 'upload', 'dashboard/materials.php', false],
@@ -219,6 +243,9 @@ function student_nav(): array {
             ['recordings', 'Recordings', 'mic', 'dashboard/recordings.php', true],
             ['games', 'Games', 'game', 'dashboard/games.php', false],
             ['progress', 'Progress', 'chart', 'dashboard/progress.php', false],
+        ]],
+        ['Connect', [
+            ['community', 'Community', 'users2', 'dashboard/community.php', false],
         ]],
         ['Account', [
             ['plan', 'Plan & billing', 'card', 'dashboard/plan.php', false],
@@ -254,6 +281,9 @@ function admin_nav(): array {   // key, label, icon, href, permission needed (an
             ['security', 'Security log', 'shield', 'admin/security.php', ['admin'], null],
             ['settings', 'Settings', 'gear', 'admin/settings.php', ['settings'], null],
         ]],
+        ['Connect', [
+            ['community', 'Community', 'users2', 'dashboard/community.php', ['view'], null],
+        ]],
     ];
 }
 /** Platform owner menu (super admin only). key, label, icon, href, permission needed, badge */
@@ -270,6 +300,7 @@ function platform_nav(): array {
             ['p-settings', 'Platform settings', 'gear', 'platform/settings.php', ['platform'], null],
             ['p-audit', 'Platform audit', 'list', 'platform/audit.php', ['platform'], null],
             ['p-security', 'Security log', 'shield', 'platform/security.php', ['platform'], null],
+            ['p-community', 'Community', 'users2', 'platform/community.php', ['platform'], null],
         ]],
     ];
 }
@@ -296,6 +327,8 @@ function staff_nav(): array {   // key, label, icon, href, permission needed (an
         ['review', 'Review queue', 'docchk', 'staff/review.php', ['review', 'approve'], 'staffq'],
         ['recordings', 'Lecture recordings', 'mic', 'dashboard/recordings.php', ['upload'], null],
         ['announcements', 'Announcements', 'mega', 'staff/announcements.php', ['announce'], null],
+    ]], ['Connect', [
+        ['community', 'Community', 'users2', 'dashboard/community.php', ['view'], null],
     ]]];
 }
 /** Lecturer dashboard menu. key, label, icon, href, permission needed (any of), badge, Plus feature */
@@ -305,7 +338,9 @@ function lecturer_nav(): array {
             ['overview', 'Dashboard', 'grid', 'lecturer/index.php', ['view'], null, false],
             ['outlines', 'Course outlines', 'book', 'lecturer/outlines.php', ['view'], null, true],
             ['lessons', 'Lesson notes', 'lesson', 'lecturer/lessons.php', ['view'], 'drafts', false],
+            ['sets', 'Flashcard sets', 'cards', 'lecturer/decks.php', ['view'], null, false],
             ['insights', 'Student insights', 'chart', 'lecturer/insights.php', ['view'], null, false],
+            ['tasks', 'Study tasks', 'list', 'lecturer/tasks.php', ['view'], null, false],
         ]],
         ['Course content', [
             ['papers', 'Upload papers', 'upload', 'staff/papers.php', ['upload'], null, false],
@@ -313,6 +348,9 @@ function lecturer_nav(): array {
             ['review', 'Review queue', 'docchk', 'staff/review.php', ['review', 'approve'], 'staffq', false],
             ['recordings', 'Lecture recordings', 'mic', 'dashboard/recordings.php', ['upload'], null, false],
             ['announcements', 'Announcements', 'mega', 'staff/announcements.php', ['announce'], null, false],
+        ]],
+        ['Connect', [
+            ['community', 'Community', 'users2', 'dashboard/community.php', ['view'], null, false],
         ]],
     ];
 }

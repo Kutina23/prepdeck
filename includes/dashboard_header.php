@@ -44,7 +44,7 @@ $latest = rows('SELECT title,body,publish_at FROM announcements WHERE ' . in_sch
 </head>
 <body class="<?= $adminArea ? 'is-admin' : 'is-student' ?>">
 <div id="pageLoader" class="spinner-overlay" role="status" aria-label="Loading page"><span class="spinner"></span></div>
-<div class="app" id="app"<?= $adminArea ? '' : ' data-tools="closed" data-side="open" data-plan-now="' . ($plus ? 'plus' : 'free') . '"' ?>>
+<div class="app<?= $lecturerArea ? " has-ltools" : "" ?>" id="app"<?= $adminArea ? '' : ' data-tools="closed" data-side="open" data-plan-now="' . ($plus ? 'plus' : 'free') . '"' ?>>
 
   <?php
   // account menu: where this person can go, then settings and sign out
@@ -54,6 +54,7 @@ $latest = rows('SELECT title,body,publish_at FROM announcements WHERE ' . in_sch
   if (staff_area_ok()) $acct[] = [staff_home($u), 'cap', is_lecturer($u) ? 'Lecturer dashboard' : ((int)$u['role_id'] === 2 ? 'Class rep desk' : 'Staff desk')];
   if (!is_lecturer($u)) $acct[] = ['dashboard/', 'home', 'Student view'];
   if (!is_owner($u)) $acct[] = ['dashboard/plan.php', 'card', 'Plan & billing'];
+  $acct[] = ['dashboard/community.php', 'users2', 'Community'];
   $acct[] = ['dashboard/settings.php', 'gear', 'Settings'];
   $acct[] = ['dashboard/help.php', 'help', 'Help'];
   $acct = array_values(array_filter($acct, fn($l) => !(($l[0] === 'platform/' && $platformArea) || ($l[0] === 'dashboard/' && !$adminArea))));

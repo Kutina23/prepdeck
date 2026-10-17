@@ -21,6 +21,7 @@ if (!$courses && $ids !== null) echo '<div class="banner warn">No courses are as
   <div class="card kpi"><span class="ic" style="background:var(--pop)"><?= ic('clock') ?></span><div><b><?= (int)$mine['pend'] ?></b><small>Waiting for review</small></div></div>
   <div class="card kpi"><span class="ic" style="background:var(--lemon)"><?= ic('eye') ?></span><div><b><?= number_format((int)$mine['views']) ?></b><small>Views on your papers</small></div></div>
 </section>
+<?= community_card($u) ?>
 <section class="card"><h2>Your privileges</h2><ul class="stack" style="padding-left:18px;margin:10px 0 0">
   <li>Upload past questions and notes to <?= $ids === null ? 'every course' : count($ids) . ' assigned course' . (count($ids) === 1 ? '' : 's') ?>.</li>
   <li><?= $auto ? 'Your uploads go live straight away.' : 'Your uploads are checked by a reviewer before students see them.' ?></li>

@@ -4,7 +4,7 @@ if (PHP_SAPI !== 'cli') exit('CLI only');
 define('ROOT', dirname(__DIR__));
 $GLOBALS['cfg'] = require ROOT . '/app/config/config.php';
 foreach (['Validator', 'Settings', 'Totp'] as $c) require_once ROOT . "/app/core/$c.php";
-foreach (['PdfText', 'AiClient', 'JobQueue', 'Mailer'] as $c) require_once ROOT . "/app/services/$c.php";
+foreach (['PdfText', 'AiClient', 'JobQueue', 'Mailer', 'Study'] as $c) require_once ROOT . "/app/services/$c.php";
 require_once ROOT . '/app/helpers.php';
 
 $fail = 0; $pass = 0;
@@ -59,6 +59,22 @@ $_ENV['APP_KEY'] = 'another-key';
 check('wrong APP_KEY opens nothing', Totp::open($sealed) === '');
 unset($_ENV['APP_KEY']);
 check('plain secret passes through', Totp::open($s) === $s);
+
+// --- smart review scheduling (SM-2)
+$new = ['ease' => 2.5, 'interval_days' => 0, 'reps' => 0, 'lapses' => 0];
+$g1 = Study::schedule($new, Study::GOOD); $g2 = Study::schedule($g1, Study::GOOD); $g3 = Study::schedule($g2, Study::GOOD);
+check('good: 1 day, 3 days, then grows by ease', $g1['interval_days'] === 1 && $g2['interval_days'] === 3 && $g3['interval_days'] === 8, json_encode([$g1, $g2, $g3]));
+$again = Study::schedule($g3, Study::AGAIN);
+check('again: back in 10 minutes, a lapse, easier ease', $again['minutes'] === 10 && $again['reps'] === 0 && $again['lapses'] === 1 && $again['ease'] === 2.3);
+check('easy beats good beats hard', Study::schedule($g2, Study::EASY)['interval_days'] > Study::schedule($g2, Study::GOOD)['interval_days'] && Study::schedule($g2, Study::GOOD)['interval_days'] > Study::schedule($g2, Study::HARD)['interval_days']);
+$e = ['ease' => 1.3, 'interval_days' => 5, 'reps' => 4, 'lapses' => 3];
+check('ease never drops under 1.3', Study::schedule($e, Study::AGAIN)['ease'] === 1.3 && Study::schedule($e, Study::HARD)['ease'] === 1.3);
+check('an interval always grows on a pass', Study::schedule($e, Study::HARD)['interval_days'] > 5 && Study::schedule(['ease' => 2.5, 'interval_days' => 3000, 'reps' => 9, 'lapses' => 0], Study::EASY)['interval_days'] === 3650);
+$h0 = Study::schedule($new, Study::HARD);
+check('hard on a new card: 6 hours, still learning', $h0['minutes'] === 360 && $h0['reps'] === 0);
+foreach ([$new, $g1, $g2, $g3, $e] as $i => $st) { $hh = Study::schedule($st, Study::HARD)['minutes']; $gg = Study::schedule($st, Study::GOOD)['minutes']; $ee = Study::schedule($st, Study::EASY)['minutes'];
+    check("hard < good < easy (state $i)", $hh < $gg && $gg < $ee, "$hh $gg $ee"); }
+check('labels', Study::label(10) === '10 min' && Study::label(3 * 1440) === '3 d' && Study::label(60 * 1440) === '2 mo');
 
 echo "$pass passed, $fail failed\n";
 exit($fail ? 1 : 0);

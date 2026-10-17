@@ -60,6 +60,22 @@ One install and one database serve every school in Ghana. Each school-owned row 
 - **Admin > Security log** (school admins) and **Platform > Security log** (platform owner, plus failed sign-ins for unknown emails) list sign-ins, failures, lockouts, two-step and password changes with IP address and device. `bin/cleanup.php` keeps one year.
 - Run `php bin/migrate.php` after updating (adds `security_log`, `user_recovery_codes` and the two-step columns on `users`).
 
+## Study hub, smart review and study tasks
+- **Study hub** (`dashboard/study.php`): daily review goal, streak, a 16-week activity calendar, tasks from lecturers, and an exam countdown (the school timetable plus exams students add) with a readiness score per course (flashcards mastered, recent practice scores, papers studied).
+- **Smart review** (`dashboard/review.php`, Plus): spaced repetition over every deck a student studies. Again / Hard / Good / Easy schedule each card (SM-2, `app/services/Study.php`); up to 20 new cards a day.
+- **Study tasks** (`lecturer/tasks.php`): lecturers set "review this deck / practise this paper / read this lesson by <date>" for a course. Students of the course (its department and level) see them in the Study hub; deck, paper and lesson tasks tick themselves off from what the student actually did.
+
+- **Learn** (`dashboard/learn.php`) and **Test** (`dashboard/test.php`), Quizlet-style modes for any flashcard set: Learn asks multiple choice, then a written answer, and repeats missed terms until all are mastered (with Plus it also schedules them in Smart review); Test builds a marked test of multiple choice, true/false, written and matching questions. Results are kept in `deck_test_attempts` (migration 0009).
+- **Lecturer flashcard sets** (`lecturer/decks.php`): term / definition sets for a course, typed or pasted (tab, dash, colon or comma separated), shared with the course's students, with usage, average test score and the hardest terms. The lecturer pages have a **Teaching tools** rail on the right (`includes/lecturer_tools.php`), like the students' Study tools.
+
+## Community (cross-school messenger)
+- `dashboard/community.php`: students (and staff) from every school find each other by name, send friend requests and chat 1-to-1 once accepted. Joining and opening it in a new session need the account password; it locks again after an hour unused. Email addresses are never shown.
+- Students under 18 (by date of birth) cannot join; the age and an on/off switch are in **Platform > Community**, which also lists reports and lets the platform owner remove someone from the community.
+- Messages arrive by polling (3 s in an open chat), so it works on any host, phone or desktop browser.
+- **End-to-end encrypted files** (up to 25 MB each, 300 MB a day per person): the paperclip in a chat encrypts the file in the browser (`public/assets/js/e2ee.js`, Web Crypto) before upload. Each member has an ECDH P-256 key pair made in their browser; the private key is stored only wrapped with AES-GCM under a PBKDF2 (600,000 rounds) key from their PrepDeck password. Each file has its own AES-256-GCM key, wrapped for the two people with ECDH + HKDF. The server (`storage/uploads/community/`, `community_files`) holds only ciphertext: no names, types or contents. A friend's profile shows a 30-digit encryption code to compare in person. After a password change the member enters their previous password once to keep old files (or starts new keys). Moderators cannot open reported files.
+- Limits to know: the same password signs in and unlocks the keys, so it passes through the server at sign-in (it is never stored); text messages are not end-to-end encrypted; and encrypted files cannot be virus-scanned. `bin/cleanup.php` deletes files both people have deleted. Run `php bin/migrate.php` (migration 0010).
+- Run `php bin/migrate.php` after updating (migration 0008).
+
 ## AI, recordings, payments
 - PDF text needs poppler (`pdftotext`). Windows: install poppler and add it to PATH. Scanned PDFs are read with `ocrmypdf` if it is installed.
 - Put `AI_API_KEY` in `.env` to switch on PrepDeck AI chat and document processing. Without it uploads queue and then show "failed: AI_API_KEY is not set".

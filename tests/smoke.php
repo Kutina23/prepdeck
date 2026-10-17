@@ -20,7 +20,7 @@ $paper = (int)val("SELECT id FROM papers ORDER BY id LIMIT 1");
 $pages = [];
 $school = (int)val('SELECT id FROM schools ORDER BY id LIMIT 1');
 if ($owner) {
-    foreach (['index', 'schools', 'users', 'permissions', 'subscriptions', 'settings', 'audit', 'security'] as $p) $pages[] = [$owner, "platform/$p.php", ''];
+    foreach (['index', 'schools', 'users', 'permissions', 'subscriptions', 'settings', 'audit', 'security', 'community'] as $p) $pages[] = [$owner, "platform/$p.php", ''];
     foreach (['subs', 'txn', 'licences', 'prices', 'coupons'] as $t) $pages[] = [$owner, 'platform/subscriptions.php', "tab=$t"];
     foreach (['', 'days=7&sort=revenue', 'days=90&sort=tokens'] as $q) $pages[] = [$owner, 'platform/index.php', $q];
     foreach (['', 'days=365&sort=growth', 'lic=ended'] as $q) $pages[] = [$owner, 'platform/finances.php', $q];
@@ -46,11 +46,11 @@ if ($paper) $pages[] = [$admin, 'admin/papers.php', "id=$paper"];
 foreach (array_filter([$lect, $admin]) as $id) foreach (['papers', 'review', 'announcements'] as $p) $pages[] = [$id, "staff/$p.php", ''];
 foreach (array_filter([$lect, $rep, $admin]) as $id) $pages[] = [$id, 'staff/courses.php', ''];   // lecturers, reps and admins can add courses to their school
 foreach (array_filter([$rep, $admin]) as $id) $pages[] = [$id, 'staff/index.php', ''];            // the staff desk (lecturers are sent to /lecturer/)
-foreach (array_filter([$lect, $admin]) as $id) foreach (['index', 'outlines', 'lessons', 'insights'] as $p) $pages[] = [$id, "lecturer/$p.php", ''];
+foreach (array_filter([$lect, $admin]) as $id) foreach (['index', 'outlines', 'lessons', 'insights', 'tasks', 'decks'] as $p) $pages[] = [$id, "lecturer/$p.php", ''];
 if ($lect && ($o = (int)val('SELECT id FROM course_outlines WHERE user_id=? LIMIT 1', [$lect]))) $pages[] = [$lect, 'lecturer/outlines.php', "id=$o"];
 if ($lect && ($n = (int)val('SELECT id FROM lesson_notes WHERE user_id=? LIMIT 1', [$lect]))) $pages[] = [$lect, 'lecturer/lessons.php', "id=$n"];
 foreach (array_filter([$stu, $admin]) as $id) {
-    foreach (['index', 'papers', 'decks', 'materials', 'recordings', 'guides', 'lessons', 'plan', 'progress', 'notes', 'games', 'help', 'settings', 'ai', 'practice'] as $p) $pages[] = [$id, "dashboard/$p.php", ''];
+    foreach (['index', 'papers', 'decks', 'materials', 'recordings', 'guides', 'lessons', 'plan', 'progress', 'notes', 'games', 'help', 'settings', 'ai', 'practice', 'study', 'review', 'community', 'learn', 'test'] as $p) $pages[] = [$id, "dashboard/$p.php", ''];
     $pages[] = [$id, 'dashboard/decks.php', 'tab=mine'];
     if ($lesson) $pages[] = [$id, 'dashboard/lessons.php', "id=$lesson"];
     if ($paper) { $pages[] = [$id, 'dashboard/papers.php', "id=$paper"]; $pages[] = [$id, 'dashboard/practice.php', "type=paper&id=$paper"]; }
@@ -58,10 +58,10 @@ foreach (array_filter([$stu, $admin]) as $id) {
 // lecturers keep only their account pages and the paper / lesson viewers from the student dashboard (inside the lecturer shell)
 $blocked = [];
 if ($lect) {
-    foreach (['papers', 'recordings', 'lessons', 'plan', 'help', 'settings'] as $p) $pages[] = [$lect, "dashboard/$p.php", ''];
+    foreach (['papers', 'recordings', 'lessons', 'plan', 'help', 'settings', 'community'] as $p) $pages[] = [$lect, "dashboard/$p.php", ''];
     if ($lesson) $pages[] = [$lect, 'dashboard/lessons.php', "id=$lesson"];
     if ($paper) $pages[] = [$lect, 'dashboard/papers.php', "id=$paper"];
-    foreach (['index', 'decks', 'materials', 'guides', 'progress', 'notes', 'games', 'ai', 'practice'] as $p) $blocked[] = [$lect, "dashboard/$p.php", ''];
+    foreach (['index', 'decks', 'materials', 'guides', 'progress', 'notes', 'games', 'ai', 'practice', 'study', 'review', 'learn', 'test'] as $p) $blocked[] = [$lect, "dashboard/$p.php", ''];
     foreach (['index', 'users', 'staff', 'teaching', 'papers', 'announcements', 'security', 'settings'] as $p) $blocked[] = [$lect, "admin/$p.php", ''];
     $pages[] = [$lect, 'staff/courses.php', 'mine=1'];
 }

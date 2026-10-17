@@ -9,6 +9,7 @@ $timerMax = $plus ? (int)setting('plus_max_timer', 180) : (int)setting('free_tim
 $bell = $latest ?? [];
 ?>
   </main>
+  <?php if ($lecturerArea) include __DIR__ . '/lecturer_tools.php'; ?>
   <?php if (!$isAdmin): ?>
   <aside class="tools" id="tools" aria-label="Study tools">
     <div class="thead">
@@ -18,7 +19,11 @@ $bell = $latest ?? [];
     <div class="tgrid">
       <?php
       $tools = [['ai', 'PrepDeck AI', 'Ask, quiz, plan', 'spark', 'var(--pop)', 'dashboard/ai.php', true],
+                ['learn', 'Learn', 'Adaptive: choose, then write', 'flame', 'var(--brand);color:var(--brand-ink)', 'dashboard/learn.php', false],
                 ['decks', 'Flashcards', 'Flip through a deck', 'cards', 'var(--lemon)', 'dashboard/decks.php', false],
+                ['test', 'Test', 'Auto-made test, marked', 'docchk', 'var(--lemon)', 'dashboard/test.php', false],
+                ['review', 'Smart review', 'Spaced repetition', 'refresh', 'var(--pop)', 'dashboard/review.php', true],
+                ['study', 'Study hub', 'Goal, tasks, exams', 'cal', 'var(--surface);color:var(--ink)', 'dashboard/study.php', false],
                 ['practice', 'Practice exam', 'Timed, with model answers', 'docchk', 'var(--pop)', 'dashboard/practice.php', true],
                 ['guides', 'Study guide', 'Guides from your papers', 'book', 'var(--lemon)', 'dashboard/guides.php', true],
                 ['recordings', 'Record lecture', 'Audio and transcript', 'mic', 'var(--brand);color:var(--brand-ink)', 'dashboard/recordings.php', true],
@@ -26,7 +31,7 @@ $bell = $latest ?? [];
                 ['materials', 'Upload notes', 'Guides, cards, games', 'upload', 'var(--lemon)', 'dashboard/materials.php', false],
                 ['notes', 'Notes', 'Write and organise', 'note', 'var(--surface);color:var(--ink)', 'dashboard/notes.php', false]];
       foreach ($tools as [$k, $label, $sub, $icon, $bg, $href, $lock]): $lock = $lock && plus_locked($k); ?>
-      <a class="tool" href="<?= e(url($href)) ?>" title="<?= e($label) ?>" aria-label="<?= e($label) . ($lock ? ' (Plus)' : '') ?>"<?= $lock ? plus_lock($k) : '' ?>><?php if ($lock): ?><span class="lk"><?= ic('lock', '') ?></span><?php endif; ?><span class="ic" style="background:<?= $bg ?>;"><?= ic($icon) ?></span><span class="tx"><b><?= e($label) ?></b><small><?= e($sub) ?></small></span></a>
+      <a class="tool" href="<?= e(url($href)) ?>" title="<?= e($label) ?>" aria-label="<?= e($label) . ($lock ? ' (Plus)' : '') ?>"<?= $lock ? plus_lock($k) : '' ?><?= ($active ?? '') === $k ? ' aria-current="page"' : '' ?>><?php if ($lock): ?><span class="lk"><?= ic('lock', '') ?></span><?php endif; ?><span class="ic" style="background:<?= $bg ?>;"><?= ic($icon) ?></span><span class="tx"><b><?= e($label) ?></b><small><?= e($sub) ?></small></span></a>
       <?php endforeach; ?>
     </div>
     <div class="railbtns">

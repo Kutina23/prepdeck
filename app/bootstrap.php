@@ -3,7 +3,7 @@ declare(strict_types=1);
 define('ROOT', dirname(__DIR__));
 $GLOBALS['cfg'] = require __DIR__ . '/config/config.php';
 foreach (['Database','Auth','Csrf','Response','Validator','Audit','Settings','Tenant','Throttle','Totp','SecurityLog'] as $c) require __DIR__ . "/core/$c.php";
-foreach (['PdfText','Transcriber','AiClient','Prompts','JobQueue','DocumentProcessor','Billing','Paystack','Mailer','Lessons','Stats'] as $c) require __DIR__ . "/services/$c.php";
+foreach (['PdfText','Transcriber','AiClient','Prompts','JobQueue','DocumentProcessor','Billing','Paystack','Mailer','Lessons','Stats','Study','Community'] as $c) require __DIR__ . "/services/$c.php";
 require __DIR__ . '/middleware/guards.php';
 require __DIR__ . '/helpers.php';
 require __DIR__ . '/icons.php';

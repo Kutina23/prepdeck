@@ -6,7 +6,7 @@
  */
 final class Settings {
     public const PLATFORM = ['ai_model', 'ai_tier', 'ai_max_pages', 'ai_max_chars', 'ai_predicted_count', 'ai_last_test', 'stt_language', 'rec_keep_audio_days',
-        'mat_max', 'mat_mb', 'rec_max_mb', 'ai_cap', 'platform_ai_on', 'platform_maintenance', 'platform_reg_open', 'school_requests_open', 'school_default_plan', '2fa_required',
+        'mat_max', 'mat_mb', 'rec_max_mb', 'ai_cap', 'platform_ai_on', 'platform_maintenance', 'platform_reg_open', 'school_requests_open', 'school_default_plan', '2fa_required', 'community_open', 'community_min_age',
         // the public site (home page, message bar, contact, social links) is one site for every school
         'hero_title', 'hero_sub', 'banner_on', 'banner_text', 'contact_email', 'contact_phone', 'social_whatsapp', 'social_instagram', 'social_x'];
     /** Per-school keys only the platform owner may change: everything about Plus (who gets it, what it unlocks, free-plan limits). */

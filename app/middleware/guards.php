@@ -8,7 +8,7 @@ function require_login(bool $json = false): array {
 }
 /** Student dashboard pages a lecturer may still open (inside the lecturer shell): their account pages, lecture recordings (in the lecturer menu),
  * and the paper / lesson note viewers that the review queue, uploads and insights link to. */
-const LECTURER_DASHBOARD_PAGES = ['plan.php', 'settings.php', 'help.php', 'recordings.php', 'papers.php', 'lessons.php'];
+const LECTURER_DASHBOARD_PAGES = ['plan.php', 'settings.php', 'help.php', 'recordings.php', 'papers.php', 'lessons.php', 'community.php'];
 /** Lecturers work from /lecturer/ (plus the shared staff pages). The school admin area and the student dashboard are closed to them. */
 function lecturer_page_check(array $u): void {
     if (!is_lecturer($u)) return;

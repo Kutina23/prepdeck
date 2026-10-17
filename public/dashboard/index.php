@@ -76,6 +76,7 @@ include ROOT . '/includes/dashboard_header.php';
 </section>
 <?php endif; ?>
 
+<?= community_card($u) ?>
 <section class="stats" aria-label="Your numbers">
   <div class="card stat"><span class="ic" style="background:var(--pop)"><?= ic('flame') ?></span><div><b><?= $streak ?> day<?= $streak === 1 ? '' : 's' ?></b><small>Study streak</small></div></div>
   <div class="card stat"><span class="ic" style="background:var(--brand);color:var(--brand-ink)"><?= ic('check') ?></span><div><b><?= $known ?></b><small>Cards known</small></div></div>

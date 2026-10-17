@@ -33,6 +33,7 @@ if ($defaultPw) echo '<div class="banner warn">The default admin password is sti
   <?php else: ?><div class="card kpi"><span class="ic" style="background:var(--brand);color:var(--brand-ink)"><?= ic('docchk') ?></span><div><b><?= number_format($pending) ?></b><small>Papers waiting for review</small></div></div><?php endif; ?>
   <div class="card kpi"><span class="ic" style="background:var(--lemon)"><?= ic('file') ?></span><div><b><?= number_format($papers) ?></b><small>Published papers</small></div></div>
 </section>
+<?= community_card($u) ?>
 <section class="card"><h2>Needs attention</h2>
   <div class="attn" style="margin-top:12px">
     <?php foreach ([['papers', $pending, 'papers waiting for review', 'admin/papers.php?status=pending', 'approve'], ['pay', $payWait, 'payments waiting to be confirmed', 'admin/payments.php?tab=txn&status=pending', 'plans'], ['jobs', $failed, 'AI jobs failed', 'admin/processing.php?status=failed', 'approve'], ['drafts', $drafts, 'AI answers waiting to be published', 'admin/processing.php', 'approve'], ['reports', $reports, 'open reports', 'admin/reports.php', 'reports'], ['outlines', $outFailed, 'course outlines failed', 'admin/teaching.php?tab=outlines&status=failed', 'admin']] as [$k, $c, $t, $h, $perm]): if (!Auth::can($perm)) continue; ?>
