@@ -17,3 +17,6 @@ echo "Deleted $d old password reset links.\n";
 
 // rate-limit log older than two days (every limit looks back at most a day)
 echo 'Deleted ' . Throttle::prune(2) . " old rate-limit entries.\n";
+
+// security log: one year is kept
+echo 'Deleted ' . SecurityLog::prune(365) . " old security log entries.\n";

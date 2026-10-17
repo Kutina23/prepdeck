@@ -5,7 +5,7 @@ $active = 'plan'; $title = 'Plan & billing'; $scripts = ['forms.js', 'plan.js'];
 $prices = Billing::prices(); $sub = row("SELECT * FROM subscriptions WHERE user_id=? AND status IN ('active','cancelled') ORDER BY id DESC LIMIT 1", [$uid]);
 $tx = rows('SELECT * FROM transactions WHERE user_id=? ORDER BY id DESC LIMIT 10', [$uid]);
 $pending = row("SELECT * FROM transactions WHERE user_id=? AND status='pending' ORDER BY id DESC LIMIT 1", [$uid]);
-$perks = ['PrepDeck AI study partner', 'Solved answers on every past question', 'Study guides and predicted exam questions', 'Record lectures with transcripts', 'Unlimited note uploads, any length', 'Every game, your own decks and progress tracking', 'Focus timer up to ' . (int)setting('plus_max_timer', 180) . ' minutes', 'Unlimited notes'];
+$perks = plus_perks();
 $sel = $_GET['period'] ?? ($prices[0]['period'] ?? 'month');
 include ROOT . '/includes/dashboard_header.php';
 echo page_head('Plan & billing', $plus ? 'You have PrepDeck Plus.' : 'Free plan. Upgrade when you want the full toolkit.');

@@ -20,7 +20,7 @@
   app.addEventListener('click', function (e) { var b = e.target.closest('.nitem'); if (b) openEditor(b); });
   var nn = document.getElementById('newnote');
   if (nn) nn.onclick = function () {
-    if (nn.dataset.full) { if (window.toast) toast('Free accounts keep ' + app.dataset.limit + ' note. Upgrade to Plus for unlimited notes.'); return; }
+    if (nn.dataset.full) { if (window.openPlus) openPlus('notes'); else if (window.toast) toast('Free accounts keep ' + app.dataset.limit + ' note. Upgrade to Plus for unlimited notes.'); return; }
     openEditor(null);
   };
   document.addEventListener('submit', function (e) {

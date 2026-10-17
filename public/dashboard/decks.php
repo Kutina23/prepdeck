@@ -10,7 +10,7 @@ if ($id) {
     $games = rows('SELECT code,name,is_plus FROM games WHERE is_enabled=1 ORDER BY id');
     include ROOT . '/includes/dashboard_header.php';
     echo page_head($d['title'], ($d['code'] ? $d['code'] . ' · ' : '') . (int)$d['card_count'] . ' cards' . ($d['ai_generated'] ? ' · made by PrepDeck AI' : ''), '<a class="btn sm line" href="' . e(url('dashboard/decks.php')) . '">All decks</a>');
-    if ($locked) echo lock_note('Solved answers on these cards');
+    if ($locked) echo lock_note('Solved answers on these cards', 'answers');
     ?>
     <section class="studyhub" id="study" data-deck="<?= $id ?>" data-plus="<?= $plus ? 1 : 0 ?>">
       <div class="studytop"><output class="studyct" id="sct" aria-live="polite">0 / 0</output><div class="progressbar neon" aria-hidden="true"><i id="sbar" style="width:0"></i></div>
@@ -23,10 +23,10 @@ if ($id) {
         <button class="btn fcbad" type="button" id="sbad">Still learning</button><button class="btn fcgood" type="button" id="sgood"><?= ic('check') ?>I know it</button>
         <button class="fcicon" type="button" id="snext" aria-label="Next card"><?= ic('chev', 'i flip') ?></button></div>
       <p class="fckeys">Space flips · arrows move · on a phone, swipe right if you know it, left to keep learning</p>
-      <?php if (!$plus): ?><p class="note"><?= ic('lock', 'i') ?> Free members can flip through cards. <a href="<?= e(url('dashboard/plan.php')) ?>"><b>Plus</b></a> saves which cards you know.</p><?php endif; ?>
+      <?php if (!$plus): ?><p class="note"><?= ic('lock', 'i') ?> Free members can flip through cards. <a href="<?= e(url('dashboard/plan.php')) ?>"<?= plus_lock('decks') ?>><b>Plus</b></a> saves which cards you know.</p><?php endif; ?>
     </section>
     <section class="card"><h2>Play with this deck</h2><div class="gmini"><?php foreach ($games as $g): $gl = $g['is_plus'] && !$plus; ?>
-      <a class="gminic" href="<?= e(url($gl ? 'dashboard/plan.php' : 'dashboard/games.php?game=' . $g['code'] . '&deck=' . $id)) ?>"><span class="gminiart" aria-hidden="true"><?= ic($g['code'] === 'match' ? 'cards' : 'game') ?></span><span><b><?= e($g['name']) ?></b><small><?= $gl ? 'Plus' : 'Play now' ?></small></span><?= $gl ? ic('lock', 'i lk') : ic('play', 'i go') ?></a>
+      <a class="gminic" href="<?= e(url($gl ? 'dashboard/plan.php' : 'dashboard/games.php?game=' . $g['code'] . '&deck=' . $id)) ?>"<?= $gl ? plus_lock('games') : '' ?>><span class="gminiart" aria-hidden="true"><?= ic($g['code'] === 'match' ? 'cards' : 'game') ?></span><span><b><?= e($g['name']) ?></b><small><?= $gl ? 'Plus' : 'Play now' ?></small></span><?= $gl ? ic('lock', 'i lk') : ic('play', 'i go') ?></a>
     <?php endforeach; ?></div></section>
     <?php if ((int)$d['owner_id'] === $uid || Auth::can('decks')): ?><button class="btn danger sm" data-api="decks.php?a=delete" data-body='{"id":<?= $id ?>}' data-redirect="dashboard/decks.php" data-confirm="Delete this deck and its cards?">Delete deck</button><?php else: ?>
     <form class="card mform" data-api="reports.php" data-done="Thanks, we will check it."><h2>Report this deck</h2><input type="hidden" name="deck_id" value="<?= $id ?>"><div class="field"><label for="rr">What is wrong?</label><input class="in" id="rr" name="reason" required maxlength="255"></div><p class="err note" role="alert"></p><button class="btn sm line">Send report</button></form><?php endif;
@@ -85,5 +85,5 @@ echo page_head('Flashcards', 'Shared decks are free. Plus lets you build your ow
   <p class="err note" role="alert"></p><button class="btn" type="submit">Save deck</button>
 </form>
 </template>
-<?php else: echo lock_note('Building your own decks'); endif; ?>
+<?php else: echo lock_note('Building your own decks', 'decks'); endif; ?>
 <?php include ROOT . '/includes/dashboard_footer.php'; ?>

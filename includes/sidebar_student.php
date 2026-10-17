@@ -5,14 +5,15 @@
       <?php foreach (student_nav() as [$group, $items]): ?>
       <span class="grp mono"><?= e($group) ?></span>
       <?php foreach ($items as [$key, $label, $icon, $href, $plusOnly]): ?>
-      <a class="link" href="<?= e(url($href)) ?>"<?= $active === $key ? ' aria-current="page"' : '' ?>><span class="ic"><?= ic($icon) ?></span><span class="t"><?= e($label) ?></span><?= $plusOnly ? ic('lock', 'i lk') : '' ?></a>
+      <?php $locked = $plusOnly && plus_locked($key); ?>
+      <a class="link" href="<?= e(url($href)) ?>"<?= $active === $key ? ' aria-current="page"' : '' ?><?= $locked ? plus_lock($key) : '' ?>><span class="ic"><?= ic($icon) ?></span><span class="t"><?= e($label) ?></span><?= $locked ? ic('lock', 'i lk') : '' ?></a>
       <?php endforeach; endforeach; ?>
     </nav>
     <?php if (!$plus): ?>
     <div class="upsell">
       <b>Unlock PrepDeck Plus</b>
       <p>AI help, solved answers, study guides, lecture recording and every game.</p>
-      <a class="upbtn" href="<?= e(url('dashboard/plan.php')) ?>">See what is included</a>
+      <a class="upbtn" href="<?= e(url('dashboard/plan.php')) ?>"<?= plus_lock() ?>>See what is included</a>
     </div>
     <?php endif; ?>
     <div class="me">

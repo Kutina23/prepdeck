@@ -4,7 +4,7 @@ $u = require_login(); $plus = is_plus($u); $uid = (int)$u['id'];
 $active = 'guides'; $title = 'Study guides'; $scripts = [];
 $id = (int)($_GET['id'] ?? 0);
 include ROOT . '/includes/dashboard_header.php';
-if (!$plus && !Auth::can('decks')) { echo page_head('Study guides', 'Short revision guides built from past papers and your notes.') . '<section class="card">' . lock_note('Study guides') . '</section>'; include ROOT . '/includes/dashboard_footer.php'; exit; }
+if (!$plus && !Auth::can('decks')) { echo page_head('Study guides', 'Short revision guides built from past papers and your notes.') . '<section class="card">' . lock_note('Study guides', 'guides', true) . '</section>'; include ROOT . '/includes/dashboard_footer.php'; exit; }
 if ($id) {
     $g = row('SELECT g.*,p.title ptitle FROM study_guides g LEFT JOIN papers p ON p.id=g.paper_id WHERE g.id=?', [$id]);
     $ok = $g && (int)$g['school_id'] === sid() && ((int)$g['owner_id'] === $uid || Auth::can('decks') || $g['status'] === 'active');

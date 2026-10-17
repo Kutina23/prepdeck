@@ -5,7 +5,7 @@ $active = 'recordings'; $title = 'Recordings'; $scripts = ['forms.js', 'process.
 $id = (int)($_GET['id'] ?? 0);
 include ROOT . '/includes/dashboard_header.php';
 $canUse = $plus || Auth::can('upload');
-if (!$canUse) { echo page_head('Record lecture', 'Record or upload a lecture. PrepDeck writes the transcript, notes and flashcards.') . '<section class="card">' . lock_note('Lecture recording') . '</section>'; include ROOT . '/includes/dashboard_footer.php'; exit; }
+if (!$canUse) { echo page_head('Record lecture', 'Record or upload a lecture. PrepDeck writes the transcript, notes and flashcards.') . '<section class="card">' . lock_note('Lecture recording', 'recordings', true) . '</section>'; include ROOT . '/includes/dashboard_footer.php'; exit; }
 if ($id) {
     $r = row('SELECT r.*,c.code FROM recordings r LEFT JOIN courses c ON c.id=r.course_id WHERE r.id=? AND ' . in_school('r') . ' AND (r.owner_id=? OR (r.status="published" AND r.visibility="course"))', [$id, $uid]);
     if (!$r) { echo page_head('Not found') . empty_state('That recording is not available.', '<a class="btn sm" href="' . e(url('dashboard/recordings.php')) . '">Back</a>'); include ROOT . '/includes/dashboard_footer.php'; exit; }

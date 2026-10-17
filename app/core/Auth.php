@@ -29,18 +29,88 @@ final class Auth {
         if (!empty($_SESSION['uid'])) $_SESSION['pwm'] = self::pwMark((string)val('SELECT password_hash FROM users WHERE id=?', [$_SESSION['uid']]));
         session_regenerate_id(true);
     }
-    /** Email + password. Email is unique across all schools, so no school is needed to sign in; a closed school blocks its members. */
+    /** How long the second step of a two-step sign-in may wait after the password was right. */
+    public const TWOFA_SECONDS = 300;
+    /**
+     * Email + password. Email is unique across all schools, so no school is needed to sign in; a closed school blocks its members.
+     * True when the password is right. With two-step sign-in on, the account is NOT signed in yet: awaitingTwoFactor() is set and twoFactor() finishes it.
+     */
     public static function attempt(string $email, string $pass): bool {
         $st = db()->prepare('SELECT u.*, s.is_active school_active FROM users u LEFT JOIN schools s ON s.id=u.school_id WHERE u.email=? LIMIT 1'); $st->execute([strtolower(trim($email))]);
-        $u = $st->fetch();
-        if (!$u || $u['status'] !== 'active' || !password_verify($pass, $u['password_hash'])) return false;
-        if ((int)$u['role_id'] !== Tenant::SUPER && $u['school_id'] !== null && !(int)$u['school_active']) return false;
+        $u = $st->fetch() ?: null;
+        if (!$u || !password_verify($pass, $u['password_hash'])) { SecurityLog::record('login_failed', 'warning', $u, $email, $u ? 'wrong password' : 'no account with this email'); return false; }
+        if ($u['status'] !== 'active') { SecurityLog::record('login_inactive', 'warning', $u, null, 'account is ' . $u['status']); return false; }
+        if ((int)$u['role_id'] !== Tenant::SUPER && $u['school_id'] !== null && !(int)$u['school_active']) { SecurityLog::record('login_inactive', 'info', $u, null, 'school is switched off'); return false; }
         session_regenerate_id(true);
+        unset($_SESSION['uid'], $_SESSION['twofa']);
+        if (!empty($u['twofa_enabled_at'])) { $_SESSION['twofa'] = ['uid' => (int)$u['id'], 'pwm' => self::pwMark($u['password_hash']), 'at' => time(), 'tries' => 0]; return true; }
+        self::signIn($u, 'password');
+        return true;
+    }
+    private static function signIn(array $u, string $how): void {
+        session_regenerate_id(true);
+        unset($_SESSION['twofa']);
         $_SESSION['uid'] = (int)$u['id']; $_SESSION['pwm'] = self::pwMark($u['password_hash']); $_SESSION['seen'] = time(); unset($_SESSION['act_school']);
         self::reset(); Tenant::forget();
         db()->prepare('UPDATE users SET last_login_at=NOW() WHERE id=?')->execute([$u['id']]);
         Audit::log('signed in', 'user', (int)$u['id']);
-        return true;
+        SecurityLog::record('login_ok', 'info', $u, null, ['password' => 'password', 'code' => 'password + authenticator code', 'recovery' => 'password + recovery code'][$how] ?? $how);
+    }
+    /** The account whose password was right and that still owes its two-step code, or null (none, expired, or the password changed meanwhile). */
+    public static function awaitingTwoFactor(): ?array {
+        $p = $_SESSION['twofa'] ?? null;
+        if (!$p || time() - (int)$p['at'] > self::TWOFA_SECONDS) { unset($_SESSION['twofa']); return null; }
+        $u = row("SELECT * FROM users WHERE id=? AND status='active' AND twofa_enabled_at IS NOT NULL", [$p['uid']]);
+        if (!$u || !hash_equals($p['pwm'], self::pwMark($u['password_hash']))) { unset($_SESSION['twofa']); return null; }
+        return $u;
+    }
+    /**
+     * Second step: a 6-digit authenticator code or a recovery code. 'ok' signs in, 'bad' = wrong code, 'expired' = start again.
+     * Five wrong codes end the waiting sign-in, so the password must be typed again (and counts toward its own limits).
+     */
+    public static function twoFactor(string $code): string {
+        $u = self::awaitingTwoFactor(); if (!$u) return 'expired';
+        $how = self::useSecondFactor($u, $code);
+        if (!$how) {
+            if (++$_SESSION['twofa']['tries'] >= 5) unset($_SESSION['twofa']);
+            SecurityLog::record('twofa_failed', 'warning', $u);
+            return 'bad';
+        }
+        if ($how === 'recovery') SecurityLog::record('recovery_used', 'warning', $u, null, self::recoveryLeft((int)$u['id']) . ' recovery codes left');
+        else SecurityLog::record('twofa_ok', 'info', $u);
+        self::signIn($u, $how);
+        return 'ok';
+    }
+
+    /* ---------- two-step sign-in set-up (Settings) ---------- */
+    /** Turn it on with a secret the person proved they scanned (the code they typed was step $step). Returns the new recovery codes, shown once. */
+    public static function twoFactorOn(int $uid, string $secret, int $step): array {
+        q('UPDATE users SET twofa_secret=?, twofa_enabled_at=NOW(), twofa_last_step=? WHERE id=?', [Totp::seal($secret), $step, $uid]);
+        return self::newRecoveryCodes($uid);
+    }
+    public static function twoFactorOff(int $uid): void {
+        q('UPDATE users SET twofa_secret=NULL, twofa_enabled_at=NULL, twofa_last_step=NULL WHERE id=?', [$uid]);
+        q('DELETE FROM user_recovery_codes WHERE user_id=?', [$uid]);
+    }
+    /** Replaces every recovery code; only hashes are stored. */
+    public static function newRecoveryCodes(int $uid): array {
+        $codes = Totp::recoveryCodes();
+        q('DELETE FROM user_recovery_codes WHERE user_id=?', [$uid]);
+        foreach ($codes as $c) q('INSERT INTO user_recovery_codes(user_id,code_hash) VALUES (?,?)', [$uid, Totp::recoveryHash($c)]);
+        return $codes;
+    }
+    public static function recoveryLeft(int $uid): int { return (int)val('SELECT COUNT(*) FROM user_recovery_codes WHERE user_id=? AND used_at IS NULL', [$uid]); }
+    /** Check a code for someone already signed in (turning two-step off, new recovery codes). */
+    public static function checkSecondFactor(array $u, string $code): bool { return self::useSecondFactor($u, $code) !== null; }
+    /** A 6-digit authenticator code ('code') or an unused recovery code ('recovery'), used up on success; null when wrong. */
+    private static function useSecondFactor(array $u, string $code): ?string {
+        $digits = preg_replace('/\s/', '', $code);
+        if (preg_match('/^\d{6}$/', $digits)) {
+            $step = Totp::verify(Totp::open($u['twofa_secret']), $digits, $u['twofa_last_step'] !== null ? (int)$u['twofa_last_step'] : null);
+            // claim the time step in one statement, so the same code cannot be used twice (two tabs, or someone watching)
+            return $step !== null && q('UPDATE users SET twofa_last_step=? WHERE id=? AND (twofa_last_step IS NULL OR twofa_last_step<?)', [$step, $u['id'], $step])->rowCount() ? 'code' : null;
+        }
+        return trim($code) !== '' && q('UPDATE user_recovery_codes SET used_at=NOW() WHERE user_id=? AND code_hash=? AND used_at IS NULL LIMIT 1', [$u['id'], Totp::recoveryHash($code)])->rowCount() ? 'recovery' : null;
     }
     /** Does this email belong to a member of a school that is switched off? (login shows a clearer message) */
     public static function schoolClosed(string $email): bool {
@@ -104,5 +174,5 @@ final class Auth {
         return self::$perms;
     }
     public static function can(string $perm): bool { return in_array($perm, self::perms(), true); }
-    public static function logout(): void { Audit::log('signed out'); $_SESSION = []; if (session_status() === PHP_SESSION_ACTIVE) session_destroy(); self::reset(); }
+    public static function logout(): void { Audit::log('signed out'); if ($u = self::user()) SecurityLog::record('logout', 'info', $u); $_SESSION = []; if (session_status() === PHP_SESSION_ACTIVE) session_destroy(); self::reset(); }
 }

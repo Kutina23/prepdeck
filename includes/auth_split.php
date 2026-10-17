@@ -73,6 +73,22 @@ $scripts[] = 'pw.js';                            // show / hide buttons on the p
           <p class="err" role="alert"></p>
           <button class="btn pop" type="submit">Sign in</button>
         </form>
+        <form id="twofa" class="auth-form" autocomplete="off" hidden>
+          <header class="card-hd">
+            <h1>Two-step sign-in</h1>
+            <p class="muted" id="twofaHelp">Open your authenticator app and enter the 6-digit code for PrepDeck.</p>
+          </header>
+          <div class="fields">
+            <div class="field">
+              <label for="twofa-code" id="twofaLabel">Authenticator code</label>
+              <input id="twofa-code" name="code" type="text" inputmode="numeric" pattern="[0-9 ]{6,7}" maxlength="7" placeholder="123 456" required autocomplete="one-time-code" spellcheck="false">
+            </div>
+          </div>
+          <p class="auth-forgot"><button type="button" class="linkbtn" id="twofaSwap">Use a recovery code instead</button></p>
+          <p class="err" role="alert"></p>
+          <button class="btn pop" type="submit">Verify and sign in</button>
+          <p class="auth-forgot"><button type="button" class="linkbtn" id="twofaBack">Back to sign in</button></p>
+        </form>
         <?php endif; ?>
         <?php if ($initial === 'register' || $tabs): ?>
         <form id="register" class="auth-form<?= $initial === 'register' ? ' active' : '' ?>" autocomplete="off">

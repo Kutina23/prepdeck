@@ -8,6 +8,7 @@ if ($act === 'login') {
     $em = strtolower(trim((string)($b['email'] ?? '')));
     if (Throttle::blocked("login-email:$em", 5, 15) || Throttle::blocked("login-ip:$ip", 20, 15)) {
         Audit::log('sign-in blocked by rate limit');
+        SecurityLog::record('login_blocked', 'critical', row('SELECT id,school_id,email FROM users WHERE email=?', [$em]), $em, Throttle::blocked("login-ip:$ip", 20, 15) ? 'too many attempts from this IP address' : 'too many attempts on this account');
         Response::error('Too many attempts. Wait 15 minutes and try again, or reset your password.', 429);
     }
     if (!Auth::attempt($em, (string)($b['password'] ?? ''))) {
@@ -16,10 +17,28 @@ if ($act === 'login') {
         Response::error('Wrong email or password.', 401);
     }
     Throttle::clear("login-email:$em");
-    $u = Auth::user(); $next = (string)($b['next'] ?? '');
-    $dest = ($next !== '' && str_starts_with($next, cfg('base')) && !str_contains($next, '//')) ? $next : url(is_super($u) ? 'platform/' : (admin_area_ok() ? 'admin/' : (staff_area_ok() ? staff_home() : 'dashboard/')));
-    if (!admin_area_ok() && str_contains($dest, '/admin/')) $dest = url(staff_area_ok() ? staff_home() : 'dashboard/');
-    Response::ok(['redirect' => $dest]);
+    if (Auth::awaitingTwoFactor()) Response::ok(['twofa' => true]);   // password right; the authenticator code comes next (a=twofa)
+    Response::ok(['redirect' => after_login((string)($b['next'] ?? ''))]);
+}
+if ($act === 'twofa') {
+    // second step of sign-in. Wrong codes count per account and per IP, and are NOT cleared by typing the password again,
+    // so knowing the password does not give unlimited guesses at the 6-digit code.
+    $p = Auth::awaitingTwoFactor();
+    if (!$p) Response::error('That sign-in has expired. Enter your email and password again.', 401);
+    if (Throttle::blocked("twofa-user:{$p['id']}", 10, 15) || Throttle::blocked("twofa-ip:$ip", 30, 15)) {
+        unset($_SESSION['twofa']);
+        SecurityLog::record('twofa_blocked', 'critical', $p, null, 'password was right, then too many wrong codes');
+        Response::error('Too many wrong codes. Wait 15 minutes, then sign in again.', 429);
+    }
+    $r = Auth::twoFactor((string)($b['code'] ?? ''));
+    if ($r === 'expired') Response::error('That sign-in has expired. Enter your email and password again.', 401);
+    if ($r === 'bad') {
+        Throttle::hit("twofa-user:{$p['id']}"); Throttle::hit("twofa-ip:$ip");
+        if (!Auth::awaitingTwoFactor()) Response::error('Too many wrong codes. Enter your email and password again.', 401);
+        Response::error('That code is not right. Check the newest code in your authenticator app, or use a recovery code.');
+    }
+    Throttle::clear("twofa-user:{$p['id']}");
+    Response::ok(['redirect' => after_login((string)($b['next'] ?? ''))]);
 }
 if ($act === 'register') {
     if (Settings::global('platform_reg_open', '1') !== '1') Response::error('Registration is closed right now.', 403);
@@ -73,6 +92,7 @@ if ($act === 'forgot') {
         $link = abs_url('reset.php?token=' . $raw);
         Mailer::passwordReset($u['email'], (string)$u['full_name'], $link, 60);
         Audit::log('asked for a password reset', 'user', (int)$u['id']);
+        SecurityLog::record('password_reset_asked', 'info', row('SELECT id,school_id,email FROM users WHERE id=?', [$u['id']]));
         if (cfg('debug')) $out['link'] = $link;   // a local install has no mail server, so show the link on the page
     }
     Response::ok($out);
@@ -88,8 +108,17 @@ if ($act === 'reset') {
     q('UPDATE users SET password_hash=? WHERE id=?', [password_hash($pass, PASSWORD_DEFAULT), $r['user_id']]);
     q('UPDATE password_resets SET used_at=NOW() WHERE id=?', [$r['id']]);
     Audit::log('reset the password from an email link', 'user', (int)$r['user_id']);
+    // two-step sign-in stays on: a reset link proves the mailbox, not the phone
+    SecurityLog::record('password_reset', 'warning', row('SELECT id,school_id,email FROM users WHERE id=?', [$r['user_id']]));
     Response::ok(['redirect' => url('login.php?reset=1')]);
 }
 if ($act === 'logout') { Auth::logout(); Response::ok(['redirect' => url()]); }
 Response::error('Unknown action.', 404);
+/** Where a fresh sign-in goes: the page they were sent away from (same site only), else their home area. */
+function after_login(string $next): string {
+    $u = Auth::user();
+    $dest = ($next !== '' && str_starts_with($next, cfg('base')) && !str_contains($next, '//')) ? $next : url(is_super($u) ? 'platform/' : (admin_area_ok() ? 'admin/' : (staff_area_ok() ? staff_home() : 'dashboard/')));
+    if (!admin_area_ok() && str_contains($dest, '/admin/')) $dest = url(staff_area_ok() ? staff_home() : 'dashboard/');
+    return $dest;
+}
 function admin_area_ok(): bool { if (is_super()) return true; foreach (['admin', 'approve', 'decks', 'users', 'plans', 'reports', 'settings'] as $p) if (Auth::can($p)) return true; return false; }

@@ -351,3 +351,55 @@ body.drawer-open{overflow:hidden}
   body.is-admin .scrim{display:none!important}
 }
 .main{max-width:100%;min-width:0}
+
+/* ---------- two-step sign-in (Settings) ---------- */
+.twofa-qr{width:200px;max-width:100%;aspect-ratio:1;margin:10px 0;padding:0;background:#fff;border-radius:10px;overflow:hidden}
+.twofa-qr svg{display:block;width:100%;height:100%}
+.twofa-key{display:inline-block;white-space:normal;overflow-wrap:anywhere;letter-spacing:.06em}
+.rcodes{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;margin:14px 0;padding:0;list-style:none}
+.rcodes code{display:block;font:500 15px/1 var(--mono);padding:10px 12px;border:1.5px dashed var(--line);border-radius:8px;text-align:center}
+.twofa-codes{border:2px solid var(--pop)}
+@media print{body *{visibility:hidden}.twofa-codes,.twofa-codes *{visibility:visible}.twofa-codes{position:absolute;inset:0 auto auto 0}.twofa-codes .rowact{display:none}}
+
+/* ---------- Plus pop-up (locked tools open it instead of a page) ---------- */
+.paywall{position:fixed;inset:0;z-index:60;display:grid;grid-template-columns:minmax(0,1fr);align-items:end;justify-items:center;background:rgba(4,14,16,.66);backdrop-filter:blur(3px);animation:pwfade .2s both}
+.paywall[hidden]{display:none}
+.pwcard{position:relative;width:100%;max-width:100%;min-width:0;max-height:94vh;max-height:94dvh;overflow:auto;background:var(--surface);color:var(--ink);border:2px solid var(--ink);border-bottom:0;border-radius:28px 28px 0 0;display:grid;animation:pwup .35s cubic-bezier(.2,.9,.2,1) both;outline:none}
+.pwhead{position:relative;display:grid;justify-items:start;gap:10px;padding:26px 20px 22px;background:var(--deep);color:var(--on-deep);overflow:hidden}
+.pwhead::before,.pwhead::after{content:"";position:absolute;border-radius:50%;pointer-events:none}
+.pwhead::before{width:220px;height:220px;right:-70px;top:-90px;background:var(--pop);opacity:.22}
+.pwhead::after{width:120px;height:120px;right:60px;bottom:-70px;background:var(--lemon);opacity:.16}
+.pwicon{position:relative;display:grid;place-items:center;width:56px;height:56px;border-radius:18px;background:var(--lemon);color:#0D2B2E;border:2px solid #0D2B2E;box-shadow:4px 4px 0 var(--pop)}
+.pwicon .i,.pwicon svg{width:28px;height:28px}
+.pwchip{position:relative;display:inline-flex;align-items:center;gap:6px;font:600 12px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--lemon)}
+.pwchip .i{width:14px;height:14px}
+.pwhead h2{position:relative;margin:0;font:800 clamp(24px,6vw,30px)/1.05 var(--display);color:var(--on-deep);max-width:20ch}
+.pwhead p{position:relative;margin:0;font-size:15px;line-height:1.5;color:var(--on-deep-muted);max-width:44ch}
+.pwx{position:absolute;top:14px;right:14px;z-index:2;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;border:0;background:color-mix(in srgb,var(--on-deep) 14%,transparent);color:var(--on-deep);cursor:pointer}
+.pwx:hover{background:color-mix(in srgb,var(--on-deep) 24%,transparent)}
+.pwbody{display:grid;gap:12px;padding:20px 20px 4px}
+.pwlbl{margin:0;font:600 12px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.pwperks{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:minmax(0,1fr);gap:8px 16px}
+.pwperks li{display:flex;gap:8px;align-items:flex-start;font-size:14.5px;line-height:1.35}
+.pwperks .i{flex:none;width:20px;height:20px;color:var(--ok)}
+.pwprice{margin:4px 0 0;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.pwprice b{font:800 28px/1 var(--display)}
+.pwprice small{color:var(--muted);font-size:14px}
+.pwfine{margin:0;font-size:13px;color:var(--muted)}
+.pwfoot{display:grid;gap:10px;padding:18px 20px calc(20px + env(safe-area-inset-bottom,0px))}
+.pwfoot .btn{width:100%;justify-content:center;min-height:50px}
+.pwgo{background:var(--pop);color:#0D2B2E;border-color:#0D2B2E;font-weight:700}
+.pwgo:hover{filter:brightness(1.05)}
+@media (min-width:720px){
+  .paywall{align-items:center;padding:24px}
+  .pwcard{max-width:560px;border-bottom:2px solid var(--ink);border-radius:28px;box-shadow:8px 8px 0 var(--ink);animation-name:pwpop}
+  .pwhead{padding:30px 28px 26px}
+  .pwbody{padding:22px 28px 4px}
+  .pwperks{grid-template-columns:1fr 1fr}
+  .pwfoot{grid-template-columns:1fr auto;padding:20px 28px 26px}
+  .pwfoot .pwlater{width:auto}
+}
+@keyframes pwfade{from{opacity:0}}
+@keyframes pwup{from{transform:translateY(40px);opacity:0}}
+@keyframes pwpop{from{transform:translateY(14px) scale(.97);opacity:0}}
+@media (prefers-reduced-motion:reduce){.paywall,.pwcard{animation:none}}

@@ -11,7 +11,7 @@ $badges = ['staffq' => staff_queue_count(), 'drafts' => (int)val("SELECT COUNT(*
       <a class="sl" href="<?= e(url($href)) ?>"<?= $active === $key ? ' aria-current="page"' : '' ?>><span class="ic"><?= ic($icon) ?></span><?= e($label) ?><?= $isPlus && !$plus ? ic('lock', 'i lk') : '' ?><?= $badge && !empty($badges[$badge]) ? '<span class="cnt">' . (int)$badges[$badge] . '</span>' : '' ?></a>
       <?php endforeach; endforeach; ?>
       <span class="grp mono" style="display:block">Account</span>
-      <?php if (!$plus): ?><a class="sl" href="<?= e(url('dashboard/plan.php')) ?>"><span class="ic"><?= ic('spark') ?></span>Get Plus</a><?php endif; ?>
+      <?php if (!$plus): ?><a class="sl" href="<?= e(url('dashboard/plan.php')) ?>"<?= plus_lock() ?>><span class="ic"><?= ic('spark') ?></span>Get Plus</a><?php endif; ?>
       <?php if (!is_lecturer($u)): /* admins previewing the lecturer dashboard */ ?>
       <?php if (admin_allowed(Auth::ADMIN_AREA)): ?><a class="sl" href="<?= e(url('admin/')) ?>"><span class="ic"><?= ic('shield') ?></span>Admin area</a><?php endif; ?>
       <a class="sl" href="<?= e(url('dashboard/')) ?>"><span class="ic"><?= ic('home') ?></span>Student view</a>

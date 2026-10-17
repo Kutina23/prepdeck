@@ -11,17 +11,51 @@
   tabs.forEach(function (t) { t.addEventListener('click', function () { show(t.dataset.form); }); });
 
   var next = new URLSearchParams(location.search).get('next') || '';
-  function submit(form, path, extra) {
+  function submit(form, path, extra, onFail) {
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
       var err = form.querySelector('.err'), btn = form.querySelector('button[type=submit]'); err.textContent = '';
       var data = Object.fromEntries(new FormData(form)); Object.assign(data, extra || {});
       btn.disabled = true;
-      api(path, data).then(function (r) { location.href = r.redirect; }).catch(function (e) { err.textContent = e.message; btn.disabled = false; if (form.id === 'register') check(); });
+      api(path, data).then(function (r) {
+        if (r.twofa) { btn.disabled = false; twofaShow(); return; }
+        location.href = r.redirect;
+      }).catch(function (e) { err.textContent = e.message; btn.disabled = false; if (form.id === 'register') check(); if (onFail) onFail(e); });
     });
   }
   var login = document.getElementById('login'), reg = document.getElementById('register');
   if (login) submit(login, 'auth.php?a=login', { next: next });
+
+  // two-step sign-in: the password was right, now the authenticator code (or a recovery code)
+  var tf = document.getElementById('twofa'), tfCode = document.getElementById('twofa-code'), tfRecovery = false;
+  function twofaMode(recovery) {
+    tfRecovery = recovery; tfCode.value = '';
+    tfCode.inputMode = recovery ? 'text' : 'numeric'; tfCode.maxLength = recovery ? 20 : 7; tfCode.placeholder = recovery ? 'xxxx-xxxx-xxxx' : '123 456';
+    if (recovery) tfCode.removeAttribute('pattern'); else tfCode.setAttribute('pattern', '[0-9 ]{6,7}');
+    tfCode.autocomplete = recovery ? 'off' : 'one-time-code';
+    document.getElementById('twofaLabel').textContent = recovery ? 'Recovery code' : 'Authenticator code';
+    document.getElementById('twofaHelp').textContent = recovery ? 'Enter one of the recovery codes you saved when you turned on two-step sign-in. Each code works once.' : 'Open your authenticator app and enter the 6-digit code for PrepDeck.';
+    document.getElementById('twofaSwap').textContent = recovery ? 'Use my authenticator app instead' : 'Use a recovery code instead';
+    tfCode.focus();
+  }
+  function twofaShow() {
+    var tg = document.querySelector('.toggle'); if (tg) tg.hidden = true;
+    forms.forEach(function (f) { f.classList.remove('active'); });
+    tf.hidden = false; tf.classList.add('active'); tf.querySelector('.err').textContent = ''; twofaMode(false);
+  }
+  function twofaBack() {
+    var tg = document.querySelector('.toggle'); if (tg) tg.hidden = false;
+    tf.hidden = true; tf.classList.remove('active');
+    login.querySelector('[name=password]').value = ''; show('login'); login.querySelector('[name=password]').focus();
+  }
+  if (tf) {
+    submit(tf, 'auth.php?a=twofa', { next: next }, function (e) {
+      if (e.status === 401 || e.status === 429) { var m = e.message; twofaBack(); login.querySelector('.err').textContent = m; }
+      else { tfCode.select(); }
+    });
+    document.getElementById('twofaSwap').addEventListener('click', function () { twofaMode(!tfRecovery); });
+    document.getElementById('twofaBack').addEventListener('click', twofaBack);
+  }
   if (reg) {    submit(reg, 'auth.php?a=register');
     var btn = reg.querySelector('button[type=submit]'), dob = document.getElementById('dob'), dh = document.getElementById('dobHint'), lv = document.getElementById('level'), lh = document.getElementById('levelHint');
     var HINTS = { '100': 'First year. Welcome.', '200': 'Second year.', '300': 'Third year.', '400': 'Final-year papers and project work.', '500': 'Final level.', 'postgraduate': 'Postgraduate study.' };

@@ -10,7 +10,7 @@ $best = []; foreach (rows('SELECT game_code,MAX(score) s FROM game_scores WHERE 
 include ROOT . '/includes/dashboard_header.php';
 if ($game && $deck) {
     echo page_head($game['name'], 'Play with ' . (val('SELECT title FROM decks WHERE id=? AND ' . in_school(), [$deck]) ?: 'a deck'), '<a class="btn sm line" href="' . e(url('dashboard/games.php')) . '">All games</a>');
-    if ($game['is_plus'] && !$plus) echo '<section class="card">' . lock_note($game['name']) . '</section>';
+    if ($game['is_plus'] && !$plus) echo '<section class="card">' . lock_note($game['name'], 'games', true) . '</section>';
     else echo '<section class="garena" id="game" data-game="' . e($game['code']) . '" data-deck="' . $deck . '"><div class="ghud"><output id="gscore" class="ghudv">Score 0</output><output id="gtime" class="ghudv">00:00</output></div><div id="gboard" class="gboard" aria-live="polite">Loading…</div><p class="gmsg" id="gmsg" role="status"></p></section>';
     include ROOT . '/includes/dashboard_footer.php'; exit;
 }
@@ -30,7 +30,7 @@ $art = [
       <div class="ghead"><h2 id="gn<?= $g['id'] ?>"><?= e($g['name']) ?></h2><span class="gchip <?= $g['is_plus'] ? 'plus' : '' ?>"><?= $g['is_plus'] ? 'Plus' : 'Free' ?></span></div>
       <p class="gabout"><?= e($about[$g['code']] ?? 'Play with any of your decks.') ?></p>
       <p class="gbest"><?= ic('flame') ?><?= $b !== null ? 'Your best: <b>' . number_format($b) . '</b>' : 'No score yet. Set the first one.' ?></p>
-      <?php if ($lock): ?><a class="btn gplay" href="<?= e(url('dashboard/plan.php')) ?>"><?= ic('lock') ?>Unlock with Plus</a><?php else: ?>
+      <?php if ($lock): ?><a class="btn gplay" href="<?= e(url('dashboard/plan.php')) ?>"<?= plus_lock('games') ?>><?= ic('lock') ?>Unlock with Plus</a><?php else: ?>
       <form method="get" class="gform"><input type="hidden" name="game" value="<?= e($g['code']) ?>"><label class="vh" for="dk<?= $g['id'] ?>">Deck</label><select class="in" id="dk<?= $g['id'] ?>" name="deck" required><option value="">Choose a deck</option><?php foreach ($decks as $d): ?><option value="<?= $d['id'] ?>"<?= $deck === (int)$d['id'] ? ' selected' : '' ?>><?= e($d['title']) ?><?= $d['contains_answers'] && !$plus ? ' (Plus)' : '' ?></option><?php endforeach; ?></select><button class="btn gplay"><?= ic('play') ?>Play</button></form><?php endif; ?>
     </div>
   </section>

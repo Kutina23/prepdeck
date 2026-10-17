@@ -4,7 +4,7 @@ $u = require_login(); $plus = is_plus($u); $uid = (int)$u['id'];
 $active = 'lessons'; $title = 'Lesson notes'; $scripts = [];
 $id = (int)($_GET['id'] ?? 0);
 include ROOT . '/includes/dashboard_header.php';
-if (!Lessons::studentsCanRead($u) && !Auth::can('admin')) { echo page_head('Lesson notes', 'Notes your lecturers prepared for each topic.') . '<section class="card">' . lock_note('Reading lesson notes') . '</section>'; include ROOT . '/includes/dashboard_footer.php'; exit; }
+if (!Lessons::studentsCanRead($u) && !Auth::can('admin')) { echo page_head('Lesson notes', 'Notes your lecturers prepared for each topic.') . '<section class="card">' . lock_note('Reading lesson notes', 'lessons', true) . '</section>'; include ROOT . '/includes/dashboard_footer.php'; exit; }
 if ($id) {
     $n = row('SELECT n.*,c.code,c.title course,u.full_name author FROM lesson_notes n JOIN courses c ON c.id=n.course_id JOIN users u ON u.id=n.user_id WHERE n.id=?', [$id]);
     $ok = $n && (int)$n['school_id'] === sid() && ((int)$n['user_id'] === $uid || $n['status'] === 'published' || Auth::can('admin'));

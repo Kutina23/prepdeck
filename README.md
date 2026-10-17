@@ -53,6 +53,13 @@ One install and one database serve every school in Ghana. Each school-owned row 
 - "Forgot password?" on the sign-in page asks for the email, and a link is mailed (valid once, 1 hour). `public/reset.php` checks the token and saves the new password. Admins can still hand out a temporary password in Admin > Users.
 - Emails go through `Mailer` (SMTP in production, see Email below). On a local install with no SMTP settings (`APP_ENV=development`) messages are written to `storage/mail.log`, and the reset link is also shown on the page.
 
+## Two-step sign-in and the security log
+- Every account (student, rep, lecturer, admin, platform owner) can turn on two-step sign-in in **Settings**: scan the QR code with an authenticator app (Google/Microsoft Authenticator, Authy, 1Password ...), type a code, and save the 10 one-time recovery codes. Signing in then needs the password and a 6-digit code (or a recovery code). A password reset by email does not turn it off.
+- Lost phone and recovery codes: an admin opens the user (Admin > Users, or Platform > All users) and presses **Reset two-step sign-in** after checking who is asking.
+- Set `APP_KEY` in `.env` before people turn it on: the authenticator secrets are then stored encrypted. Changing `APP_KEY` later breaks existing set-ups (members then need a recovery code or an admin reset).
+- **Admin > Security log** (school admins) and **Platform > Security log** (platform owner, plus failed sign-ins for unknown emails) list sign-ins, failures, lockouts, two-step and password changes with IP address and device. `bin/cleanup.php` keeps one year.
+- Run `php bin/migrate.php` after updating (adds `security_log`, `user_recovery_codes` and the two-step columns on `users`).
+
 ## AI, recordings, payments
 - PDF text needs poppler (`pdftotext`). Windows: install poppler and add it to PATH. Scanned PDFs are read with `ocrmypdf` if it is installed.
 - Put `AI_API_KEY` in `.env` to switch on PrepDeck AI chat and document processing. Without it uploads queue and then show "failed: AI_API_KEY is not set".

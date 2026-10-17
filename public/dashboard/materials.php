@@ -53,7 +53,7 @@ echo page_head('My materials', 'Upload lecture notes. PrepDeck makes a study gui
 <form class="card mform" data-api="materials.php?a=upload" data-job="1" data-redirect="dashboard/materials.php?id={id}" enctype="multipart/form-data">
   <h2>Upload notes</h2>
   <p class="note"><?= $plus ? 'Plus: unlimited uploads, any length.' : "Free: $used of $freeMax documents used, up to $freePages page each. Plus is unlimited." ?></p>
-  <?php if ($full): echo lock_note('More uploads'); endif; ?>
+  <?php if ($full): echo lock_note('More uploads', 'uploads'); endif; ?>
   <div class="field"><label for="mt2">Title</label><input class="in" id="mt2" name="title" placeholder="CSC 201 week 4 notes" required minlength="2" maxlength="160"<?= $full ? ' disabled' : '' ?>></div>
   <div class="drop"><?= ic('upload') ?><label for="mf"><b>Choose a PDF</b></label><input id="mf" name="file" type="file" accept="application/pdf" required<?= $full ? ' disabled' : '' ?>></div>
   <div class="progressbar" hidden><i style="width:0"></i></div><p class="note" data-jobmsg></p><p class="err note" role="alert"></p>

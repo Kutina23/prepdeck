@@ -58,7 +58,7 @@ include ROOT . '/includes/dashboard_header.php';
     <a href="<?= e(url('dashboard/ai.php?q=' . urlencode($q))) ?>"><button type="button"><?= e($l) ?></button></a>
     <?php endforeach; ?>
   </div>
-  <?php if (!$plus): ?><div class="veil" style="display:grid"><?= ic('lock') ?><b>PrepDeck AI is part of Plus</b><p>Your AI study partner for every course.</p><a class="btn" href="<?= e(url('dashboard/plan.php')) ?>">See Plus</a></div><?php endif; ?>
+  <?php if (!$plus): ?><div class="veil" style="display:grid"><?= ic('lock') ?><b>PrepDeck AI is part of Plus</b><p>Your AI study partner for every course.</p><a class="btn" href="<?= e(url('dashboard/plan.php')) ?>"<?= plus_lock('ai') ?>>See Plus</a></div><?php endif; ?>
 </section>
 
 <section class="card upl" aria-labelledby="uph">

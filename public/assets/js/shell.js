@@ -33,6 +33,39 @@
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal && !modal.hidden && (!cfm || cfm.hidden)) closeSheet(); });
   var dot = $('.bell-btn .dot'); if (dot && window.PD && PD.latest && +sget('pd-bell') < PD.latest) dot.hidden = false;
 
+  /* ---- Plus pop-up: [data-plus-lock="ai"] opens it for that tool instead of going to the locked page; [data-plus-auto] opens it on load ---- */
+  var pw = $('#paywall');
+  if (pw) {
+    var pwCard = $('.pwcard', pw), pwFeat = {}, pwBack = null;
+    try { pwFeat = JSON.parse(pw.dataset.features || '{}'); } catch (e) {}
+    var pwOpen = function (key) {
+      var f = pwFeat[key] || pwFeat.plus; if (!f) return;
+      $('#pwt').textContent = f.t; $('#pwd').textContent = f.d; $('#pwi').innerHTML = f.i;
+      if (modal && !modal.hidden) closeSheet();
+      closeDrop(false);
+      pwBack = document.activeElement; pw.hidden = false; document.body.classList.add('modal-open');
+      var go = $('.pwgo', pw); (go && matchMedia('(min-width:720px)').matches ? go : pwCard).focus();
+    };
+    var pwClose = function () { pw.hidden = true; document.body.classList.remove('modal-open'); if (pwBack && pwBack.focus) pwBack.focus(); };
+    window.openPlus = pwOpen;
+    // capture phase, so the page loader and other link handlers never see the click
+    document.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-plus-lock]'); if (!b || e.metaKey || e.ctrlKey || e.shiftKey) return;
+      e.preventDefault(); e.stopPropagation(); pwOpen(b.dataset.plusLock);
+    }, true);
+    pw.addEventListener('click', function (e) { if (e.target === pw || e.target.closest('[data-pw-close]')) pwClose(); });
+    document.addEventListener('keydown', function (e) {
+      if (pw.hidden) return;
+      if (e.key === 'Escape') { pwClose(); return; }
+      if (e.key === 'Tab') {   // keep focus inside the card
+        var f = $$('a[href],button:not([disabled])', pwCard), first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && (document.activeElement === first || document.activeElement === pwCard)) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    });
+    var auto = $('[data-plus-auto]'); if (auto) pwOpen(auto.dataset.plusAuto);
+  }
+
   /* ---- header drop panes: <button data-drop="id"> opens the panel with that id (notifications, account) ---- */
   var drop = null;
   function closeDrop(focusBtn) { if (!drop) return; drop.p.hidden = true; drop.b.setAttribute('aria-expanded', 'false'); if (focusBtn) drop.b.focus(); drop = null; }

@@ -34,7 +34,7 @@ if ($type && $sid) {
     include ROOT . '/includes/dashboard_header.php';
     if (!$src) { echo page_head('Practice exam') . empty_state('That paper is not available for practice.', '<a class="btn sm" href="' . e(url('dashboard/practice.php')) . '">All practice exams</a>'); include ROOT . '/includes/dashboard_footer.php'; exit; }
     echo page_head('Practice: ' . $src['title'], ($src['code'] ? $src['code'] . ' · ' : '') . count($src['questions']) . ' questions with model answers', '<a class="btn sm line" href="' . e(url('dashboard/practice.php')) . '">All practice exams</a>');
-    if (!$plus) { echo '<section class="card">' . lock_note('Practice exams with model answers') . '</section>'; include ROOT . '/includes/dashboard_footer.php'; exit; }
+    if (!$plus) { echo '<section class="card">' . lock_note('Practice exams with model answers', 'practice', true) . '</section>'; include ROOT . '/includes/dashboard_footer.php'; exit; }
     if (!$src['questions']) { echo empty_state('PrepDeck AI has not written answers for this yet. Check back after it is processed and reviewed.'); include ROOT . '/includes/dashboard_footer.php'; exit; }
     $best = row('SELECT MAX(ROUND(100*correct/NULLIF(total,0))) best, COUNT(*) n FROM practice_attempts WHERE user_id=? AND source_type=? AND source_id=? AND ' . in_school(), [$uid, $type, $sid]);
     $data = ['type' => $type, 'id' => $sid, 'title' => $src['title'], 'questions' => array_map(fn($q) => ['n' => (string)($q['number'] ?: ''), 'q' => $q['question'], 'a' => $q['answer'], 'topic' => $q['topic'], 'marks' => $q['marks'] ? (int)$q['marks'] : null, 'kind' => $q['kind']], $src['questions'])];
@@ -73,7 +73,7 @@ $recent = rows("SELECT a.*, COALESCE(p.title,m.title,r.title) title FROM practic
 $avg = row('SELECT COUNT(*) n, ROUND(AVG(100*correct/NULLIF(total,0))) avg, COALESCE(SUM(total),0) qs FROM practice_attempts WHERE user_id=? AND ' . in_school(), [$uid]);
 include ROOT . '/includes/dashboard_header.php';
 echo page_head('Practice exams', 'Timed exam practice from past papers, your notes and lectures, with model answers to mark yourself against.');
-if (!$plus) echo '<section class="card">' . lock_note('Practice exams with model answers') . '</section>';
+if (!$plus) echo '<section class="card">' . lock_note('Practice exams with model answers', 'practice', true) . '</section>';
 ?>
 <section class="stats"><div class="card stat"><span class="ic" style="background:var(--lemon)"><?= ic('docchk') ?></span><div><b><?= (int)$avg['n'] ?></b><small>Exams taken</small></div></div>
   <div class="card stat"><span class="ic" style="background:var(--brand);color:var(--brand-ink)"><?= ic('check') ?></span><div><b><?= $avg['avg'] !== null ? (int)$avg['avg'] . '%' : '–' ?></b><small>Average score</small></div></div>

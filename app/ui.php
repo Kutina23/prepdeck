@@ -163,7 +163,45 @@ function guide_html(string $t): string {
     }
     return $out . ($list ? '</' . $list . '>' : '');
 }
-function lock_note(string $what = 'This'): string { return '<div class="lockbox">' . ic('lock', 'i') . '<div><b>' . e($what) . ' is part of PrepDeck Plus</b><p class="note">Upgrade to unlock it.</p></div><a class="btn sm" href="' . e(url('dashboard/plan.php')) . '">See Plus</a></div>'; }
+/** Inline "part of Plus" box. The button opens the Plus pop-up for $feature (see plus_features); $auto opens it as the page loads (the whole page is locked). */
+function lock_note(string $what = 'This', string $feature = 'plus', bool $auto = false): string {
+    return '<div class="lockbox"' . ($auto ? ' data-plus-auto="' . e($feature) . '"' : '') . '>' . ic('lock', 'i') . '<div><b>' . e($what) . ' is part of PrepDeck Plus</b><p class="note">Upgrade to unlock it.</p></div><a class="btn sm" href="' . e(url('dashboard/plan.php')) . '"' . plus_lock($feature) . '>See Plus</a></div>';
+}
+
+/* ---------- Plus pop-up: locked tools open it instead of a page ---------- */
+/** What each locked tool is, for the Plus pop-up: key => [title, why it helps, icon]. 'plus' is the general one. */
+function plus_features(): array {
+    return [
+        'plus' => ['Unlock PrepDeck Plus', 'Everything you need to walk into the exam ready: AI help, solved answers, study guides, lecture recording and every game.', 'spark'],
+        'ai' => ['Unlock PrepDeck AI', 'Your study partner for every course. Ask questions, get topics explained simply and quiz yourself on your own notes and past papers.', 'spark'],
+        'practice' => ['Unlock practice exams', 'Sit timed mock exams built from real past papers, then check every answer against a worked model answer.', 'docchk'],
+        'guides' => ['Unlock study guides', 'Short revision guides and likely exam questions, made from your past papers and notes.', 'book'],
+        'recordings' => ['Unlock lecture recording', 'Record or upload a lecture. PrepDeck writes the transcript, clean notes and flashcards for you.', 'mic'],
+        'lessons' => ['Unlock lesson notes', 'Read the topic-by-topic notes your lecturers prepared for each course.', 'lesson'],
+        'games' => ['Unlock every game', 'Turn any deck into quick revision games. Match stays free; Plus opens all the others.', 'game'],
+        'answers' => ['Unlock solved answers', 'See a worked answer for every past question, so you know exactly how marks are earned.', 'file'],
+        'decks' => ['Unlock your own decks', 'Build your own flashcard decks and let PrepDeck remember which cards you already know.', 'cards'],
+        'notes' => ['Unlock unlimited notes', 'Write as many notes as you need and tag each one to a course.', 'note'],
+        'uploads' => ['Unlock more uploads', 'Upload notes of any length, as often as you like, and turn them into guides, cards and games.', 'upload'],
+        'timer' => ['Unlock the full focus timer', 'Set your own focus length, up to ' . (int)setting('plus_max_timer', 180) . ' minutes a session.', 'timer'],
+    ];
+}
+/** Everything Plus includes (Plan & billing and the pop-up). */
+function plus_perks(): array {
+    return ['PrepDeck AI study partner', 'Solved answers on every past question', 'Study guides and predicted exam questions', 'Record lectures with transcripts', 'Unlimited note uploads, any length', 'Every game, your own decks and progress tracking', 'Focus timer up to ' . (int)setting('plus_max_timer', 180) . ' minutes', 'Unlimited notes'];
+}
+/** Is this Plus tool closed to the signed-in person? Some staff may use a tool without Plus (reps upload recordings, deck editors see guides). */
+function plus_locked(string $key): bool {
+    $u = Auth::user(); if (!$u) return true;
+    return match ($key) {
+        'guides' => !is_plus($u) && !Auth::can('decks'),
+        'recordings' => !is_plus($u) && !Auth::can('upload'),
+        'lessons' => !Lessons::studentsCanRead($u) && !Auth::can('admin'),
+        default => !is_plus($u),
+    };
+}
+/** Attribute that makes a link or button open the Plus pop-up instead of going to its page (shell.js). */
+function plus_lock(string $key = 'plus'): string { return ' data-plus-lock="' . e(isset(plus_features()[$key]) ? $key : 'plus') . '"'; }
 
 /* ---------- navigation (the "external sidebar" reads these) ---------- */
 function student_nav(): array {
@@ -213,6 +251,7 @@ function admin_nav(): array {   // key, label, icon, href, permission needed (an
         ]],
         ['System', [
             ['audit', 'Audit log', 'list', 'admin/audit.php', ['admin'], null],
+            ['security', 'Security log', 'shield', 'admin/security.php', ['admin'], null],
             ['settings', 'Settings', 'gear', 'admin/settings.php', ['settings'], null],
         ]],
     ];
@@ -230,6 +269,7 @@ function platform_nav(): array {
             ['p-site', 'Site content', 'globe', 'platform/site.php', ['platform'], null],
             ['p-settings', 'Platform settings', 'gear', 'platform/settings.php', ['platform'], null],
             ['p-audit', 'Platform audit', 'list', 'platform/audit.php', ['platform'], null],
+            ['p-security', 'Security log', 'shield', 'platform/security.php', ['platform'], null],
         ]],
     ];
 }

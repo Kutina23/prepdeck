@@ -3,7 +3,7 @@
 if (PHP_SAPI !== 'cli') exit('CLI only');
 define('ROOT', dirname(__DIR__));
 $GLOBALS['cfg'] = require ROOT . '/app/config/config.php';
-foreach (['Validator', 'Settings'] as $c) require_once ROOT . "/app/core/$c.php";
+foreach (['Validator', 'Settings', 'Totp'] as $c) require_once ROOT . "/app/core/$c.php";
 foreach (['PdfText', 'AiClient', 'JobQueue', 'Mailer'] as $c) require_once ROOT . "/app/services/$c.php";
 require_once ROOT . '/app/helpers.php';
 
@@ -34,6 +34,31 @@ check('credit error is explained', str_contains(JobQueue::friendlyError('AI erro
 check('missing key is explained', str_contains(JobQueue::friendlyError('AI_API_KEY is not set in .env'), 'not connected'));
 $chunks = PdfText::chunks(str_repeat("para one\n\n", 4000), 12000);
 check('chunks stay under the limit', max(array_map('mb_strlen', $chunks)) <= 12000 + 20 && count($chunks) > 1);
+
+// --- two-step sign-in codes: RFC 6238 test vectors (SHA-1 secret "12345678901234567890", last 6 digits)
+$rfc = Totp::b32encode('12345678901234567890');
+check('base32 round trip', Totp::b32decode($rfc) === '12345678901234567890' && Totp::b32decode(strtolower(chunk_split($rfc, 4, ' '))) === '12345678901234567890');
+foreach ([59 => '287082', 1111111109 => '081804', 1111111111 => '050471', 1234567890 => '005924', 2000000000 => '279037', 20000000000 => '353130'] as $t => $want)
+    check("totp at $t", Totp::code($rfc, Totp::step($t)) === $want, Totp::code($rfc, Totp::step($t)));
+$s = Totp::secret(); $now = 1700000000; $c = Totp::code($s, Totp::step($now));
+check('secret is 32 base32 chars', strlen($s) === 32 && strlen(Totp::b32decode($s)) === 20);
+check('current code accepted', Totp::verify($s, $c, null, $now) === Totp::step($now));
+check('code with a space accepted', Totp::verify($s, substr($c, 0, 3) . ' ' . substr($c, 3), null, $now) !== null);
+check('previous step accepted (clock drift)', Totp::verify($s, Totp::code($s, Totp::step($now) - 1), null, $now) !== null);
+check('two steps old refused', Totp::verify($s, Totp::code($s, Totp::step($now) - 2), null, $now) === null);
+check('replayed code refused', Totp::verify($s, $c, Totp::step($now), $now) === null);
+check('empty secret refused', Totp::verify('', $c, null, $now) === null);
+$rc = Totp::recoveryCodes();
+check('ten distinct recovery codes', count(array_unique($rc)) === 10 && preg_match('/^[a-z2-9]{4}-[a-z2-9]{4}-[a-z2-9]{4}$/', $rc[0]) === 1);
+check('recovery code typed loosely matches', Totp::recoveryHash(strtoupper(str_replace('-', ' ', $rc[0]))) === Totp::recoveryHash($rc[0]));
+check('otpauth uri', str_starts_with(Totp::uri($s, 'a@b.c'), 'otpauth://totp/PrepDeck:a%40b.c?secret=' . $s . '&issuer=PrepDeck'));
+$_ENV['APP_KEY'] = 'unit-test-key';
+$sealed = Totp::seal($s);
+check('secret sealed with APP_KEY', str_starts_with($sealed, 'enc:') && !str_contains($sealed, $s) && Totp::open($sealed) === $s);
+$_ENV['APP_KEY'] = 'another-key';
+check('wrong APP_KEY opens nothing', Totp::open($sealed) === '');
+unset($_ENV['APP_KEY']);
+check('plain secret passes through', Totp::open($s) === $s);
 
 echo "$pass passed, $fail failed\n";
 exit($fail ? 1 : 0);

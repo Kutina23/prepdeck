@@ -15,7 +15,7 @@ echo page_head('My notes', $plus ? 'Unlimited notes, tagged to your courses.' : 
     <button class="nitem" type="button" data-id="<?= $n['id'] ?>" data-course="<?= (int)$n['course_id'] ?>" data-body="<?= e($n['body']) ?>" data-title="<?= e($n['title']) ?>"><b><?= e($n['title']) ?></b><small><?= e(mb_strimwidth((string)$n['body'], 0, 120, '…')) ?></small><span class="nmeta note"><?= $n['code'] ? e($n['code']) . ' · ' : '' ?><?= e(ago($n['updated_at'])) ?></span></button>
     <?php endforeach; ?>
   </div>
-  <?php if (!$plus): ?><div style="margin-top:12px"><?= lock_note('Unlimited notes') ?></div><?php endif; ?></section>
+  <?php if (!$plus): ?><div style="margin-top:12px"><?= lock_note('Unlimited notes', 'notes') ?></div><?php endif; ?></section>
 </div>
 <template id="tpl-note-editor">
 <form class="card mform" id="neditor">

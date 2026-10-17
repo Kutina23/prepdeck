@@ -26,7 +26,7 @@ if ($id) {
       </section>
       <section class="stack">
         <div class="card"><div class="hd"><div><h2>Questions &amp; answers</h2><p class="sub"><?= count($qs) ?> question<?= count($qs) === 1 ? '' : 's' ?> read from this document</p></div></div>
-          <?php if (!$plus && !$staff && $qs): echo lock_note('Solved answers'); endif; ?>
+          <?php if (!$plus && !$staff && $qs): echo lock_note('Solved answers', 'answers'); endif; ?>
           <?php if (!$qs): echo empty_state('No questions have been extracted yet.'); endif; ?>
           <div class="list" style="margin-top:12px">
           <?php foreach ($qs as $i => $q): ?>

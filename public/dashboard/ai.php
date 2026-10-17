@@ -8,7 +8,7 @@ $courses = rows('SELECT id,CONCAT(code," · ",title) n FROM courses WHERE ' . in
 include ROOT . '/includes/dashboard_header.php';
 echo page_head('PrepDeck AI', 'Your study partner. It explains, quizzes you and plans your revision.');
 if (setting('ai_on', '1') !== '1') { echo '<div class="banner warn">PrepDeck AI is switched off for now.</div>'; }
-elseif (!$plus) { echo '<section class="card">' . lock_note('PrepDeck AI') . '</section>'; }
+elseif (!$plus) { echo '<section class="card">' . lock_note('PrepDeck AI', 'ai', true) . '</section>'; }
 elseif (!$adult) { echo '<div class="banner warn">PrepDeck AI is for students aged 18 and over.</div>'; }
 else { ?>
 <section class="card" style="padding:0;display:flex;flex-direction:column;min-height:60vh" id="aichat" data-left="<?= $left ?>" data-q="<?= e($_GET['q'] ?? '') ?>">

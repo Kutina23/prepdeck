@@ -23,7 +23,9 @@ if (is_post()) {
     elseif ($a === 'revoke') { Billing::revoke($id); Audit::log("revoked Plus from {$t['email']}", 'user', $id); flash('ok', 'Plus removed.'); }
     elseif ($a === 'status' && $id !== (int)$u['id'] && !$isTop) { $s = Validator::in($_POST['status'] ?? '', ['active', 'suspended']); if ($s) { q('UPDATE users SET status=? WHERE id=?', [$s, $id]); Audit::log("$s {$t['email']}", 'user', $id); flash('ok', 'Account ' . $s . '.'); } }
     elseif ($a === 'role' && $isAdmin && $id !== (int)$u['id'] && !$isTop) { $r = (int)($_POST['role_id'] ?? 0); if (in_array($r, $roleIds, true)) { q('UPDATE users SET role_id=? WHERE id=?', [$r, $id]); Audit::log("changed role of {$t['email']} to $r", 'user', $id); flash('ok', 'Role changed.'); } else flash('bad', 'Only the platform owner can give that role.'); }
-    elseif ($a === 'reset' && $isAdmin && !$isTop) { $pw = bin2hex(random_bytes(5)); q('UPDATE users SET password_hash=? WHERE id=?', [password_hash($pw, PASSWORD_DEFAULT), $id]); Audit::log("reset password of {$t['email']}", 'user', $id); flash('ok', "Temporary password for {$t['email']}: $pw (shown once)"); }
+    elseif ($a === 'reset' && $isAdmin && !$isTop) { $pw = bin2hex(random_bytes(5)); q('UPDATE users SET password_hash=? WHERE id=?', [password_hash($pw, PASSWORD_DEFAULT), $id]); Audit::log("reset password of {$t['email']}", 'user', $id); SecurityLog::record('password_reset_admin', 'warning', $t, null, 'by ' . $u['email']); flash('ok', "Temporary password for {$t['email']}: $pw (shown once)"); }
+    // lost phone and recovery codes: an admin switches two-step sign-in off so the member can sign in with the password and set it up again
+    elseif ($a === 'twofa_reset' && $isAdmin && $id !== (int)$u['id'] && !$isTop && !empty($t['twofa_enabled_at'])) { Auth::twoFactorOff($id); Audit::log("reset two-step sign-in of {$t['email']}", 'user', $id); SecurityLog::record('twofa_reset', 'critical', $t, null, 'by ' . $u['email']); flash('ok', 'Two-step sign-in is off for this account. Ask them to set it up again from Settings.'); }
     elseif ($a === 'delete' && $isAdmin && $id !== (int)$u['id'] && !$isTop) {
         // papers, announcements, payments and reports keep their author, so an account that has any of them cannot be deleted
         try { q('DELETE FROM users WHERE id=?', [$id]); Audit::log("deleted user {$t['email']}", 'user', $id); flash('ok', 'User deleted.'); redirect_or_ajax('admin/users.php'); }
@@ -46,7 +48,7 @@ if ($id) {
     echo page_head($t['full_name'], $t['email'], '<a class="btn sm line" href="' . e(url('admin/users.php')) . '">All users</a>');
     ?>
     <div class="grid2">
-      <section class="card dt"><?= dt_head('Account') ?><dl class="kv"><dt>Role</dt><dd><?= e(role_label($t['role'])) ?></dd><dt>Status</dt><dd><?= status_pill($t['status']) ?></dd><dt>Plan</dt><dd><?= $tp ? 'Plus' . ($t['plus_expires'] ? ' until ' . e(fdate($t['plus_expires'])) : '') : 'Free' ?></dd><dt>Department</dt><dd><?= e($t['dept'] ?: '-') ?></dd><dt>Level</dt><dd><?= e(level_label($t['level']) ?: '-') ?></dd><dt>Joined</dt><dd><?= e(fdate($t['created_at'])) ?></dd><dt>Last sign-in</dt><dd><?= e(ago($t['last_login_at'])) ?></dd></dl></section>
+      <section class="card dt"><?= dt_head('Account') ?><dl class="kv"><dt>Role</dt><dd><?= e(role_label($t['role'])) ?></dd><dt>Status</dt><dd><?= status_pill($t['status']) ?></dd><dt>Plan</dt><dd><?= $tp ? 'Plus' . ($t['plus_expires'] ? ' until ' . e(fdate($t['plus_expires'])) : '') : 'Free' ?></dd><dt>Department</dt><dd><?= e($t['dept'] ?: '-') ?></dd><dt>Level</dt><dd><?= e(level_label($t['level']) ?: '-') ?></dd><dt>Joined</dt><dd><?= e(fdate($t['created_at'])) ?></dd><dt>Last sign-in</dt><dd><?= e(ago($t['last_login_at'])) ?></dd><dt>Two-step sign-in</dt><dd><?= !empty($t['twofa_enabled_at']) ? '<span class="pill ok">On</span>' : '<span class="pill new">Off</span>' ?></dd></dl></section>
       <section class="card dt"><?= dt_head('Activity') ?><dl class="kv"><?php foreach ($stats as $k => $v): ?><dt><?= e($k) ?></dt><dd><?= (int)$v ?></dd><?php endforeach; ?></dl></section>
     </div>
     <div class="grid2">
@@ -58,6 +60,7 @@ if ($id) {
         <?= row_form($act, ['a' => 'status', 'id' => $id, 'status' => $t['status'] === 'active' ? 'suspended' : 'active'], $t['status'] === 'active' ? 'Suspend account' : 'Reactivate account', 'btn sm line', $t['status'] === 'active' ? 'Suspend this account? They will not be able to sign in.' : '') ?>
         <?php if ($owner): ?><?= modal_btn('tpl-role', 'Change role', 'Change role', 'btn sm line') ?>
         <?= row_form($act, ['a' => 'reset', 'id' => $id], 'Reset password', 'btn sm line', 'Create a temporary password for this user?') ?>
+        <?php if (!empty($t['twofa_enabled_at'])) echo row_form($act, ['a' => 'twofa_reset', 'id' => $id], 'Reset two-step sign-in', 'btn sm line', 'Turn off two-step sign-in for this account? Only do this after checking who is asking, for example in person.'); ?>
         <?= row_form($act, ['a' => 'delete', 'id' => $id], 'Delete user', 'btn sm danger', 'Delete this account and its data? This cannot be undone.') ?><?php endif; ?></div>
         <?php else: ?><p class="note" style="margin-top:8px">This is an admin or your own account, so these controls are locked.</p><?php endif; ?></section>
     </div>
